@@ -1,0 +1,44 @@
+// ============================================================================
+// I. INSPECTION SCHEDULING SYSTEM (Added 2026-07-02)
+// ============================================================================
+
+model InspectionSetting {
+  id          String   @id @default(uuid()) @db.Uuid
+  type        String   @unique
+  nameAr      String   @map("name_ar")
+  minInterval Int      @map("min_interval")
+  maxInterval Int      @map("max_interval")
+  isActive    Boolean  @default(true)
+  description String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  schedules InspectionSchedule[]
+
+  @@map("inspection_setting")
+}
+
+model InspectionSchedule {
+  id            String    @id @default(uuid()) @db.Uuid
+  hiveId        String    @map("hive_id") @db.Uuid
+  settingId     String    @map("setting_id") @db.Uuid
+
+  scheduledDate DateTime  @map("scheduled_date") @db.Timestamptz
+
+  status        String    @default("PENDING")
+  completedAt   DateTime? @map("completed_at") @db.Timestamptz
+  reminderSent  Boolean   @default(false)
+  notes         String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  hive    Hive             @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+  setting InspectionSetting @relation(fields: [settingId], references: [id])
+
+  @@index([hiveId])
+  @@index([scheduledDate])
+  @@index([status])
+  @@map("inspection_schedule")
+}

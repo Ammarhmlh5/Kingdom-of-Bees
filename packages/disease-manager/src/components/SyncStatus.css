@@ -1,0 +1,482 @@
+/**
+ * Sync Status Component Styles
+ * أنماط مكون حالة المزامنة
+ */
+
+/* ==================== Container ==================== */
+
+.sync-status {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-primary, #ffffff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  transition: all 0.3s ease;
+}
+
+.sync-status.compact {
+  padding: 12px;
+}
+
+.sync-status.detailed {
+  padding: 16px;
+}
+
+/* ==================== Main Status ==================== */
+
+.sync-status-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sync-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.status-icon {
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 0.3s ease;
+}
+
+.sync-status.detailed .status-icon {
+  font-size: 24px;
+}
+
+/* أيقونة دوارة للمزامنة */
+.sync-status-indicator .status-icon {
+  animation: none;
+}
+
+.sync-status-indicator .status-icon:has-text('🔄') {
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.status-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #212121);
+}
+
+.sync-status.detailed .status-text {
+  font-size: 16px;
+}
+
+/* ==================== Sync Button ==================== */
+
+.sync-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--primary-color, #2196f3);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.sync-button:hover:not(:disabled) {
+  background: var(--primary-dark, #1976d2);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.sync-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.sync-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sync-spinner {
+  display: inline-block;
+  animation: rotate 1s linear infinite;
+}
+
+/* ==================== Details ==================== */
+
+.sync-status-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+.sync-detail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.detail-label {
+  color: var(--text-secondary, #757575);
+  font-weight: 400;
+}
+
+.detail-value {
+  color: var(--text-primary, #212121);
+  font-weight: 500;
+}
+
+/* عناصر خاصة */
+.sync-detail-item.pending .detail-value {
+  color: #ff9800;
+  font-weight: 600;
+}
+
+.sync-detail-item.conflicts .detail-value {
+  color: #f44336;
+  font-weight: 600;
+}
+
+/* ==================== Auto Sync Toggle ==================== */
+
+.sync-detail-item.auto-sync {
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+.auto-sync-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.auto-sync-toggle input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--border-color, #e0e0e0);
+  border-radius: 12px;
+  transition: background 0.3s ease;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.auto-sync-toggle input:checked + .toggle-slider {
+  background: var(--primary-color, #2196f3);
+}
+
+.auto-sync-toggle input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.toggle-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary, #212121);
+}
+
+/* ==================== Error Message ==================== */
+
+.sync-error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  background: #ffebee;
+  border: 1px solid #ef5350;
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.error-icon {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.error-text {
+  font-size: 13px;
+  color: #c62828;
+  line-height: 1.4;
+}
+
+/* ==================== Progress Bar ==================== */
+
+.sync-progress {
+  margin-top: 8px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--border-color, #e0e0e0);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--primary-color, #2196f3);
+  border-radius: 2px;
+  animation: progress 1.5s ease-in-out infinite;
+}
+
+@keyframes progress {
+  0% {
+    width: 0%;
+    margin-left: 0%;
+  }
+  50% {
+    width: 50%;
+    margin-left: 25%;
+  }
+  100% {
+    width: 0%;
+    margin-left: 100%;
+  }
+}
+
+/* ==================== RTL Support ==================== */
+
+[dir="rtl"] .sync-status-main {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .sync-status-indicator {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .sync-button {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .sync-detail-item {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .auto-sync-toggle {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .toggle-slider::before {
+  left: auto;
+  right: 2px;
+}
+
+[dir="rtl"] .auto-sync-toggle input:checked + .toggle-slider::before {
+  transform: translateX(-20px);
+}
+
+[dir="rtl"] .sync-error-message {
+  flex-direction: row-reverse;
+}
+
+/* ==================== Dark Mode ==================== */
+
+@media (prefers-color-scheme: dark) {
+  .sync-status {
+    background: var(--bg-primary-dark, #1e1e1e);
+    border-color: var(--border-color-dark, #424242);
+  }
+
+  .status-text {
+    color: var(--text-primary-dark, #e0e0e0);
+  }
+
+  .sync-status-details {
+    border-top-color: var(--border-color-dark, #424242);
+  }
+
+  .detail-label {
+    color: var(--text-secondary-dark, #b0b0b0);
+  }
+
+  .detail-value {
+    color: var(--text-primary-dark, #e0e0e0);
+  }
+
+  .sync-detail-item.auto-sync {
+    border-top-color: var(--border-color-dark, #424242);
+  }
+
+  .toggle-slider {
+    background: var(--border-color-dark, #424242);
+  }
+
+  .toggle-label {
+    color: var(--text-primary-dark, #e0e0e0);
+  }
+
+  .sync-error-message {
+    background: #3e2723;
+    border-color: #d32f2f;
+  }
+
+  .error-text {
+    color: #ef5350;
+  }
+
+  .progress-bar {
+    background: var(--border-color-dark, #424242);
+  }
+}
+
+/* ==================== Responsive ==================== */
+
+@media (max-width: 768px) {
+  .sync-status {
+    padding: 12px;
+  }
+
+  .sync-status.detailed {
+    padding: 14px;
+  }
+
+  .sync-status-main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sync-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .status-icon {
+    font-size: 18px;
+  }
+
+  .sync-status.detailed .status-icon {
+    font-size: 20px;
+  }
+
+  .status-text {
+    font-size: 13px;
+  }
+
+  .sync-status.detailed .status-text {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sync-status {
+    padding: 10px;
+  }
+
+  .sync-detail-item {
+    font-size: 12px;
+  }
+
+  .sync-button {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}
+
+/* ==================== Accessibility ==================== */
+
+.sync-button:focus-visible {
+  outline: 2px solid var(--primary-color, #2196f3);
+  outline-offset: 2px;
+}
+
+.auto-sync-toggle:focus-within .toggle-slider {
+  outline: 2px solid var(--primary-color, #2196f3);
+  outline-offset: 2px;
+}
+
+/* تحسين التباين للنصوص */
+@media (prefers-contrast: high) {
+  .sync-status {
+    border-width: 2px;
+  }
+
+  .status-text,
+  .detail-label,
+  .detail-value,
+  .toggle-label {
+    font-weight: 600;
+  }
+
+  .sync-button {
+    border: 2px solid transparent;
+  }
+
+  .sync-button:focus-visible {
+    border-color: white;
+  }
+}
+
+/* تقليل الحركة للمستخدمين الذين يفضلون ذلك */
+@media (prefers-reduced-motion: reduce) {
+  .sync-status,
+  .sync-button,
+  .status-icon,
+  .toggle-slider,
+  .toggle-slider::before {
+    transition: none;
+  }
+
+  .sync-spinner,
+  .status-icon,
+  .progress-fill {
+    animation: none;
+  }
+}
+
+/* ==================== Print Styles ==================== */
+
+@media print {
+  .sync-status {
+    border: 1px solid #000;
+    page-break-inside: avoid;
+  }
+
+  .sync-button {
+    display: none;
+  }
+
+  .sync-progress {
+    display: none;
+  }
+}

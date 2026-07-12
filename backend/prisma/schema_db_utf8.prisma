@@ -1,0 +1,188 @@
+﻿generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model alerts {
+  id         String   @id
+  apiary_id  String
+  disease_id String
+  date       DateTime @default(now())
+  status     String   @default("Active")
+  lat        Float?
+  lng        Float?
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  apiaries   apiaries @relation(fields: [apiary_id], references: [id], onDelete: Cascade)
+  diseases   diseases @relation(fields: [disease_id], references: [id])
+}
+
+model apiaries {
+  id          String        @id
+  user_id     String
+  name        String
+  location    String
+  description String?
+  lat         Float?
+  lng         Float?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime
+  alerts      alerts[]
+  users       users         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  hives       hives[]
+  productions productions[]
+}
+
+model diseases {
+  id              String   @id
+  name            String   @unique
+  scientific_name String?
+  symptoms        String[]
+  description     String?
+  treatment       String?
+  is_contagious   Boolean  @default(true)
+  severity        String   @default("Moderate")
+  alerts          alerts[]
+}
+
+model hives {
+  id           String        @id
+  apiary_id    String
+  name         String
+  type         String        @default("Langstroth")
+  strength     String        @default("Moderate")
+  notes        String?
+  queen_breed  String?
+  queen_year   Int?
+  queen_status String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime
+  apiaries     apiaries      @relation(fields: [apiary_id], references: [id], onDelete: Cascade)
+  inspections  inspections[]
+  productions  productions[]
+}
+
+model inspections {
+  id            String   @id
+  hive_id       String
+  date          DateTime @default(now())
+  type          String   @default("Routine")
+  queen_spotted Boolean  @default(false)
+  brood_pattern String   @default("Solid")
+  honey_store   String   @default("Medium")
+  pollen_store  String   @default("Medium")
+  temperament   String   @default("Calm")
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+  hives         hives    @relation(fields: [hive_id], references: [id], onDelete: Cascade)
+}
+
+model productions {
+  id        String   @id
+  apiary_id String
+  hive_id   String?
+  date      DateTime @default(now())
+  type      String
+  quantity  Float
+  unit      String
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  apiaries  apiaries @relation(fields: [apiary_id], references: [id], onDelete: Cascade)
+  hives     hives?   @relation(fields: [hive_id], references: [id])
+}
+
+model users {
+  id        String     @id
+  name      String
+  email     String     @unique
+  password  String
+  role      String     @default("beekeeper")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime
+  apiaries  apiaries[]
+}
+
+enum AlertStatus {
+  Active
+  Monitoring
+  Resolved
+}
+
+enum BroodPattern {
+  Solid
+  Spotty
+  None
+}
+
+enum DiseaseSeverity {
+  Low
+  Moderate
+  High
+}
+
+enum HiveStrength {
+  Strong
+  Moderate
+  Weak
+}
+
+enum HiveTemperament {
+  Calm
+  Nervous
+  Aggressive
+}
+
+enum HiveType {
+  Langstroth
+  Kenyan
+  TopBar
+}
+
+enum InspectionType {
+  Routine
+  Emergency
+  Harvest
+  Treatment
+}
+
+enum ProductionType {
+  Honey
+  Wax
+  Pollen
+  RoyalJelly
+  Propolis
+  Venom
+}
+
+enum ProductionUnit {
+  kg
+  g
+  liter
+  ml
+}
+
+enum QueenStatus {
+  Marked
+  Unmarked
+  Missing
+}
+
+enum StoreLevel {
+  Low
+  Medium
+  High
+}
+
+enum UserRole {
+  beekeeper
+  admin
+}
+
+

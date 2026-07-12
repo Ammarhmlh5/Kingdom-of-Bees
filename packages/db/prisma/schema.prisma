@@ -1,0 +1,3644 @@
+// Kingdom of Bees - Prisma Schema
+// Database: PostgreSQL (Supabase)
+// Version: 1.0
+// Last Updated: December 18, 2025
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// A. USER MANAGEMENT (5 tables)
+// ============================================================================
+
+model UserProfile {
+  id     String @id @default(uuid()) @db.Uuid
+  authId String @unique @map("auth_id") @db.Uuid // References auth.users in Supabase
+
+  // Personal Information
+  fullName  String  @map("full_name")
+  email     String  @unique
+  password  String?
+  phone     String?
+  avatarUrl String? @map("avatar_url")
+
+  // User Type
+  userType UserType @default(EXPLORER) @map("user_type")
+
+  // Location
+  country String?
+  region  String?
+  city    String?
+
+  // Settings
+  language String @default("ar")
+  timezone String @default("Asia/Riyadh")
+
+  // Subscription
+  subscriptionStatus SubscriptionStatus @default(FREE) @map("subscription_status")
+  subscriptionPlan   SubscriptionPlan?  @map("subscription_plan")
+  subscriptionStart  DateTime?          @map("subscription_start_date") @db.Timestamptz
+  subscriptionEnd    DateTime?          @map("subscription_end_date") @db.Timestamptz
+
+  // Enhanced Billing (Admin Panel)
+  billingPlanId String?      @map("billing_plan_id") @db.Uuid
+  billingPlan   BillingPlan? @relation(fields: [billingPlanId], references: [id])
+  invoices      Invoice[]
+
+  // Tracking
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  lastLoginAt DateTime? @map("last_login_at") @db.Timestamptz
+
+  // Status
+  isActive   Boolean @default(true) @map("is_active")
+  isVerified Boolean @default(false) @map("is_verified")
+
+  // Statistics
+  totalApiaries Int @default(0) @map("total_apiaries")
+  totalHives    Int @default(0) @map("total_hives")
+
+  // Relations
+  ownedApiaries        Apiary[]                  @relation("ApiaryOwner")
+  apiaryMemberships    ApiaryMembership[]
+  notifications        Notification[]
+  activityLogs         UserActivityLog[]
+  notificationSettings UserNotificationSettings?
+
+  // Queen breeding
+  queensBred Queen[] @relation("QueenBreeder")
+
+  // Feeding records
+  feedingRecords FeedingRecord[]
+
+  // Inspections
+  inspections Inspection[]
+
+  // Disease records
+  diseaseDetections DiseaseRecord[]
+
+  // Plant observations
+  plantObservations PlantObservation[]
+
+  // Weather records
+  weatherRecords WeatherData[]
+
+  // Operations (removed splitsPerformed due to constraint issues)
+
+  // AI recommendations
+  aiRecommendations AIRecommendationLog[]
+
+  // Alerts
+  alerts             Alert[]
+  alertsAcknowledged Alert[] @relation("AcknowledgedBy")
+
+  // Feedback
+  appFeedback AppFeedback[]
+
+  // New relations
+  assignedTasks    ApiaryTask[]
+  operationsPerformed ApiaryOperation[]
+
+  // Search history
+  searchHistory SearchHistory[]
+  HiveTemplate  HiveTemplate[]
+  AIChatSession AIChatSession[]
+  AIUserContext AIUserContext[]
+
+  @@index([email])
+  @@index([userType])
+  @@map("user_profile")
+}
+
+model ApiaryMembership {
+  id       String @id @default(uuid()) @db.Uuid
+  apiaryId String @map("apiary_id") @db.Uuid
+  userId   String @map("user_id") @db.Uuid
+
+  // Role
+  role        MemberRole @default(WORKER)
+  permissions Json       @default("{ \"all\": true }")
+
+  // Status
+  status MembershipStatus @default(PENDING)
+
+  // Tracking
+  invitedBy String?   @map("invited_by") @db.Uuid
+  invitedAt DateTime  @default(now()) @map("invited_at") @db.Timestamptz
+  joinedAt  DateTime? @map("joined_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  apiary Apiary      @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  user   UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([apiaryId, userId])
+  @@index([apiaryId])
+  @@index([userId])
+  @@map("apiary_membership")
+}
+
+model UserNotificationSettings {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @map("user_id") @db.Uuid
+
+  // Channels
+  pushEnabled  Boolean @default(true) @map("push_enabled")
+  emailEnabled Boolean @default(true) @map("email_enabled")
+  smsEnabled   Boolean @default(false) @map("sms_enabled")
+
+  // Types
+  inspectionReminders Boolean @default(true) @map("inspection_reminders")
+  feedingReminders    Boolean @default(true) @map("feeding_reminders")
+  harvestReminders    Boolean @default(true) @map("harvest_reminders")
+  diseaseAlerts       Boolean @default(true) @map("disease_alerts")
+  swarmAlerts         Boolean @default(true) @map("swarm_alerts")
+  weatherAlerts       Boolean @default(true) @map("weather_alerts")
+
+  // Quiet Hours
+  quietHoursStart DateTime? @map("quiet_hours_start") @db.Time
+  quietHoursEnd   DateTime? @map("quiet_hours_end") @db.Time
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_notification_settings")
+}
+
+model Notification {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+
+  // Content
+  title    String
+  message  String
+  type     NotificationType
+  category String
+
+  // Data
+  data Json?
+
+  // Action
+  actionUrl   String? @map("action_url")
+  actionLabel String? @map("action_label")
+
+  // Status
+  read   Boolean   @default(false)
+  readAt DateTime? @map("read_at") @db.Timestamptz
+
+  // Delivery
+  sentVia Json @default("[]") @map("sent_via") // ['push', 'email']
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz
+
+  // Relations
+  user UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([read])
+  @@map("notification")
+}
+
+model UserActivityLog {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+
+  // Activity
+  action       String
+  resourceType String? @map("resource_type")
+  resourceId   String? @map("resource_id") @db.Uuid
+
+  // Details
+  details Json?
+
+  // Device
+  deviceInfo Json?   @map("device_info")
+  ipAddress  String? @map("ip_address") @db.Inet
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([resourceType, resourceId])
+  @@map("user_activity_log")
+}
+
+// ============================================================================
+// B. APIARY MANAGEMENT (3 tables)
+// ============================================================================
+
+model Apiary {
+  id      String @id @default(uuid()) @db.Uuid
+  ownerId String @map("owner_id") @db.Uuid
+
+  // Basic Information
+  name        String
+  description String?
+  
+  // Invitation
+  inviteCode String? @unique @map("invite_code")
+
+  // Type
+  type ApiaryType
+
+  // Location
+  locationLat Decimal? @map("location_lat") @db.Decimal(10, 8)
+  locationLng Decimal? @map("location_lng") @db.Decimal(11, 8)
+  address     String?
+  region      String?
+  elevation   Int? // meters
+
+  // Information
+  establishedDate  DateTime? @map("established_date") @db.Date
+  initialHiveCount Int       @default(0) @map("initial_hive_count")
+  currentHiveCount Int       @default(0) @map("current_hive_count")
+
+  // Settings
+  settings Json @default("{}") // Strategy, preferences, etc.
+
+  // Equipment
+  equipment Json @default("{}") // Inventory of equipment
+
+  // Status
+  isActive Boolean @default(true) @map("is_active")
+
+  // Tracking
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  lastInspectionDate DateTime? @map("last_inspection_date") @db.Timestamptz
+
+  // Statistics
+  stats Json @default("{}") // Production, inspections, etc.
+
+  // Relations
+  owner                  UserProfile             @relation("ApiaryOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members                ApiaryMembership[]
+  hives                  Hive[]
+  locationHistory        ApiaryLocationHistory[]
+  equipmentLogs          ApiaryEquipmentLog[]
+  inspections            Inspection[]
+  nuclei                 Nucleus[]
+  diseaseRecords         DiseaseRecord[]
+  feedingRecommendations FeedingRecommendation[]
+  feedingSchedules       FeedingSchedule[]
+  harvestRecords         HarvestRecord[]
+  splitOperations        SplitOperation[]
+  mergeOperations        MergeOperation[]
+  superOperations        SuperOperation[]
+  swarmEvents            SwarmEvent[]
+  localPlants            LocalPlant[]
+  forageAssessments      ForageAssessment[]
+  weatherData            WeatherData[]
+  weatherForecasts       WeatherForecast[]
+  weatherImpacts         WeatherImpact[]
+  feedingRecords         FeedingRecord[]
+  alerts                 Alert[]
+  aiRecommendations      AIRecommendationLog[]
+  HiveSensor             HiveSensor[]
+
+  // New relations
+  inspectionSchedules   InspectionSchedule[]
+  tasks                 ApiaryTask[]
+  financialRecords      FinancialRecord[]
+  operations            ApiaryOperation[]
+  metrics               ApiaryMetrics[]
+
+  @@index([ownerId])
+  @@index([type])
+  @@index([isActive])
+  @@map("apiary")
+}
+
+model ApiaryLocationHistory {
+  id       String @id @default(uuid()) @db.Uuid
+  apiaryId String @map("apiary_id") @db.Uuid
+
+  // Location
+  locationLat Decimal @map("location_lat") @db.Decimal(10, 8)
+  locationLng Decimal @map("location_lng") @db.Decimal(11, 8)
+  address     String?
+
+  // Dates
+  movedDate     DateTime  @map("moved_date") @db.Date
+  departureDate DateTime? @map("departure_date") @db.Date
+
+  // Reason
+  reason String?
+  notes  String?
+
+  // Assessment
+  forageRating       Int?     @map("forage_rating")
+  productionAchieved Decimal? @map("production_achieved") @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  apiary Apiary @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+
+  @@index([apiaryId, movedDate(sort: Desc)])
+  @@map("apiary_location_history")
+}
+
+model ApiaryEquipmentLog {
+  id       String @id @default(uuid()) @db.Uuid
+  apiaryId String @map("apiary_id") @db.Uuid
+
+  // Equipment
+  equipmentType String  @map("equipment_type")
+  equipmentName String? @map("equipment_name")
+
+  // Action
+  action   EquipmentAction
+  quantity Int             @default(1)
+
+  // Details
+  details String?
+  cost    Decimal? @db.Decimal(10, 2)
+
+  // Tracking
+  performedBy String?  @map("performed_by") @db.Uuid
+  performedAt DateTime @default(now()) @map("performed_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  apiary Apiary @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+
+  @@index([apiaryId, performedAt(sort: Desc)])
+  @@map("apiary_equipment_log")
+}
+
+// ============================================================================
+// C. HIVE MANAGEMENT (5 tables)
+// ============================================================================
+
+model Hive {
+  id       String @id @default(uuid()) @db.Uuid
+  apiaryId String @map("apiary_id") @db.Uuid
+
+  // Basic Information
+  hiveNumber String  @map("hive_number")
+  name       String?
+
+  // Type
+  // Type (Link to Catalog)
+  hiveTypeId String   @map("hive_type_id") @db.Uuid
+  hiveType   HiveType @relation(fields: [hiveTypeId], references: [id])
+
+  // Genetics
+  beeBreedId String?   @map("bee_breed_id") @db.Uuid
+  beeBreed   BeeBreed? @relation(fields: [beeBreedId], references: [id])
+
+  // Configuration
+  stories      Int     @default(1)
+  framesPerBox Int     @default(10) @map("frames_per_box")
+  frameSize    String? @map("frame_size") // 'deep', 'medium', 'shallow'
+
+  // Status
+  status HiveStatus @default(ACTIVE)
+
+  // Strength
+  strengthScore  Int?            @map("strength_score")
+  strengthRating StrengthRating? @map("strength_rating")
+
+  // Condition (Computed from inspections)
+  condition      HiveCondition?  @default(UNKNOWN)
+
+  // Queen
+  queenId     String? @unique @map("queen_id") @db.Uuid
+  queenAge    Int?    @map("queen_age_months")
+  queenMarked Boolean @default(false) @map("queen_marked")
+  queenColor  String? @map("queen_color")
+
+  // Important Dates
+  installationDate     DateTime? @map("installation_date") @db.Date
+  lastInspectionDate   DateTime? @map("last_inspection_date") @db.Timestamptz
+  nextInspectionDue    DateTime? @map("next_inspection_due") @db.Date
+  nextInspectionReason String?   @map("next_inspection_reason")
+
+  // Position in Apiary
+  positionRow    Int? @map("position_row")
+  positionColumn Int? @map("position_column")
+
+  // Notes
+  notes String?
+  tags  String[] // ['aggressive', 'productive', 'gentle']
+
+  // Tracking
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Statistics
+  stats Json @default("{}") // Inspections, harvests, production
+
+  // Relations
+  apiary                 Apiary                   @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  queen                  Queen?                   @relation(fields: [queenId], references: [id], onDelete: SetNull)
+  frames                 HiveFrame[]
+  supers                 HiveSuper[]
+  history                HiveHistory[]
+  baladiAssessments      BaladiHiveAssessment[]
+  inspections            Inspection[]
+  feedingRecords         FeedingRecord[]
+  feedingRecommendations FeedingRecommendation[]
+  feedingSchedules       FeedingSchedule[]
+  honeyHarvests          HoneyHarvest[]
+  pollenHarvests         PollenHarvest[]
+  royalJellyProduction   RoyalJellyProduction[]
+  consolidations         ConsolidationOperation[]
+  swarmEvents            SwarmEvent[]             @relation("SourceHive")
+  capturedSwarms         SwarmEvent[]             @relation("NewHive")
+  diseaseAffected        DiseaseRecord[]
+  alerts                 Alert[]
+  aiRecommendations      AIRecommendationLog[]
+  splitAsMother          SplitOperation[]         @relation("MotherHive")
+  mergeAsSurvivor        MergeOperation[]         @relation("SurvivorHive")
+  mergeAsMerged          MergeOperation[]         @relation("MergedHive")
+  superOperations        SuperOperation[]
+  HiveSensor             HiveSensor[]
+
+  // New relations
+  inspectionSchedules   InspectionSchedule[]
+  tasks                 ApiaryTask[]
+  operations            ApiaryOperation[]
+  operationAnalyses     OperationAnalysis[]
+
+  @@unique([apiaryId, hiveNumber])
+  @@index([apiaryId])
+  @@index([status])
+  @@index([queenId])
+  @@map("hive")
+}
+
+model HiveFrame {
+  id     String @id @default(uuid()) @db.Uuid
+  hiveId String @map("hive_id") @db.Uuid
+
+  // Position
+  story    Int @default(1)
+  position Int // 1-10
+
+  // Type
+  frameType FrameType @default(STANDARD) @map("frame_type")
+
+  // Content Percentages (0-100)
+  broodPercentage  Int        @default(0) @map("brood_percentage")
+  broodType        BroodType? @map("brood_type")
+  honeyPercentage  Int        @default(0) @map("honey_percentage")
+  pollenPercentage Int        @default(0) @map("pollen_percentage")
+
+  // Condition
+  condition FrameCondition @default(GOOD)
+  ageYears  Int            @default(0) @map("age_years")
+
+  // Tracking
+  lastUpdated DateTime @default(now()) @map("last_updated") @db.Timestamptz
+  updatedBy   String?  @map("updated_by") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  hive              Hive                    @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+  inspectionDetails InspectionFrameDetail[]
+
+  @@unique([hiveId, story, position])
+  @@index([hiveId])
+  @@map("hive_frame")
+}
+
+model HiveSuper {
+  id     String @id @default(uuid()) @db.Uuid
+  hiveId String @map("hive_id") @db.Uuid
+
+  // Information
+  superNumber Int @map("super_number") // 1, 2, 3...
+  frameCount  Int @default(10) @map("frame_count")
+
+  // Settings
+  queenExcluder Boolean        @default(false) @map("queen_excluder")
+  queenLocation QueenLocation? @map("queen_location")
+
+  // Dates
+  addedDate   DateTime  @map("added_date") @db.Date
+  removedDate DateTime? @map("removed_date") @db.Date
+
+  // Production
+  estimatedYieldKg Decimal? @map("estimated_yield_kg") @db.Decimal(10, 2)
+  actualYieldKg    Decimal? @map("actual_yield_kg") @db.Decimal(10, 2)
+
+  // Status
+  status SuperStatus @default(ACTIVE)
+
+  // Tracking
+  addedBy   String?  @map("added_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  notes String?
+
+  // Relations
+  hive Hive @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+
+  @@index([hiveId])
+  @@map("hive_super")
+}
+
+model HiveHistory {
+  id     String @id @default(uuid()) @db.Uuid
+  hiveId String @map("hive_id") @db.Uuid
+
+  // Event
+  eventType HiveEventType @map("event_type")
+
+  // Details
+  description String
+  data        Json?
+
+  // Tracking
+  performedBy String?  @map("performed_by") @db.Uuid
+  performedAt DateTime @default(now()) @map("performed_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  hive Hive @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+
+  @@index([hiveId, performedAt(sort: Desc)])
+  @@map("hive_history")
+}
+
+model BaladiHiveAssessment {
+  id     String @id @default(uuid()) @db.Uuid
+  hiveId String @map("hive_id") @db.Uuid
+
+  // Assessment
+  assessmentDate DateTime @default(now()) @map("assessment_date") @db.Timestamptz
+
+  // Activity
+  flightActivity      FlightActivity @map("flight_activity")
+  flightActivityScore Int            @map("flight_activity_score")
+
+  // Building
+  combBuildingRate  CombBuildingRate? @map("comb_building_rate")
+  combBuildingScore Int?              @map("comb_building_score")
+
+  // Pollen Collection
+  pollenCollectionRate  PollenCollectionRate? @map("pollen_collection_rate")
+  pollenCollectionScore Int?                  @map("pollen_collection_score")
+
+  // Overall
+  overallAppearance String?
+  overallScore      Int?    @map("overall_score")
+
+  // Sound
+  soundAssessment String? @map("sound_assessment")
+
+  // Weight
+  estimatedWeightKg Decimal? @map("estimated_weight_kg") @db.Decimal(10, 2)
+
+  // Weather
+  weatherConditions  String?  @map("weather_conditions")
+  temperatureCelsius Decimal? @map("temperature_celsius") @db.Decimal(5, 2)
+
+  // Notes
+  notes  String?
+  images String[]
+
+  // Tracking
+  assessedBy String?  @map("assessed_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  hive Hive @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+
+  @@index([hiveId, assessmentDate(sort: Desc)])
+  @@map("baladi_hive_assessment")
+}
+
+// ============================================================================
+// D. INSPECTIONS (4 models)
+// ============================================================================
+
+model Inspection {
+  id       String @id @default(uuid()) @db.Uuid
+  hiveId   String @map("hive_id") @db.Uuid
+  apiaryId String @map("apiary_id") @db.Uuid
+
+  // Dates
+  inspectionDate  DateTime @map("inspection_date") @db.Timestamptz
+  durationMinutes Int?     @map("duration_minutes")
+
+  // Type
+  inspectionType InspectionType @map("inspection_type")
+
+  // Weather
+  weatherConditions  String?  @map("weather_conditions")
+  temperatureCelsius Decimal? @map("temperature_celsius") @db.Decimal(5, 2)
+
+  // Overall Assessment
+  overallAssessment OverallAssessment @map("overall_assessment")
+  overallScore      Int?              @map("overall_score")
+
+  // Strength
+  strengthBefore Int? @map("strength_before")
+  strengthAfter  Int? @map("strength_after")
+
+  // Queen
+  queenSeen    Boolean?      @map("queen_seen")
+  queenQuality QueenQuality? @map("queen_quality")
+  eggsPresent  Boolean?      @map("eggs_present")
+  eggsPattern  EggPattern?   @map("eggs_pattern")
+
+  // Brood
+  broodPresent      Boolean?      @map("brood_present")
+  broodPattern      BroodPattern? @map("brood_pattern")
+  broodFramesCount  Int?          @map("brood_frames_count")
+  cappedBroodFrames Int?          @map("capped_brood_frames")
+
+  // Resources
+  honeyFramesCount  Int?     @map("honey_frames_count")
+  pollenFramesCount Int?     @map("pollen_frames_count")
+  estimatedHoneyKg  Decimal? @map("estimated_honey_kg") @db.Decimal(10, 2)
+
+  // Population
+  populationEstimate PopulationEstimate? @map("population_estimate")
+  framesCovered      Int?                @map("frames_covered")
+
+  // Temperament
+  temperament Temperament?
+
+  // Diseases & Pests
+  diseasesDetected Boolean @default(false) @map("diseases_detected")
+  pestsDetected    Boolean @default(false) @map("pests_detected")
+
+  // Swarm Signs
+  swarmCellsPresent Boolean    @default(false) @map("swarm_cells_present")
+  swarmCellsCount   Int        @default(0) @map("swarm_cells_count")
+  swarmRisk         SwarmRisk? @map("swarm_risk")
+
+  // Notes
+  notes           String?
+  recommendations String[]
+
+  // Media
+  images String[]
+  videos String[]
+
+  // Tracking
+  inspectedBy String?  @map("inspected_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  hive         Hive                    @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+  apiary       Apiary                  @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  inspector    UserProfile?            @relation(fields: [inspectedBy], references: [id])
+  findings     InspectionFinding[]
+  actions      InspectionAction[]
+  frameDetails InspectionFrameDetail[]
+
+  // New relations
+  schedules   InspectionSchedule[]
+
+  @@index([hiveId, inspectionDate(sort: Desc)])
+  @@index([apiaryId, inspectionDate(sort: Desc)])
+  @@index([diseasesDetected])
+  @@map("inspection")
+}
+
+model InspectionFinding {
+  id           String @id @default(uuid()) @db.Uuid
+  inspectionId String @map("inspection_id") @db.Uuid
+
+  // Finding
+  findingType FindingType @map("finding_type")
+  severity    Severity
+
+  title       String
+  description String?
+
+  // Data
+  data Json?
+
+  // Recommended Action
+  recommendedAction String?         @map("recommended_action")
+  actionPriority    ActionPriority? @map("action_priority")
+  actionDeadline    DateTime?       @map("action_deadline") @db.Date
+
+  // Media
+  images String[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+
+  @@index([inspectionId])
+  @@map("inspection_finding")
+}
+
+model InspectionAction {
+  id           String @id @default(uuid()) @db.Uuid
+  inspectionId String @map("inspection_id") @db.Uuid
+
+  // Action
+  actionType  ActionType @map("action_type")
+  description String
+
+  // Details
+  details Json?
+
+  // Outcome
+  outcome String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+
+  @@index([inspectionId])
+  @@map("inspection_action")
+}
+
+model InspectionFrameDetail {
+  id           String @id @default(uuid()) @db.Uuid
+  inspectionId String @map("inspection_id") @db.Uuid
+  frameId      String @map("frame_id") @db.Uuid
+
+  // State at inspection
+  position Int
+
+  broodPercentage Int?       @map("brood_percentage")
+  broodType       BroodType? @map("brood_type")
+  broodAge        BroodAge?  @map("brood_age")
+
+  honeyPercentage       Int? @map("honey_percentage")
+  honeyCappedPercentage Int? @map("honey_capped_percentage")
+
+  pollenPercentage Int?     @map("pollen_percentage")
+  pollenColors     String[] @map("pollen_colors")
+
+  // Notes
+  condition String?
+  notes     String?
+
+  // Media
+  imageUrl String? @map("image_url")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  frame      HiveFrame  @relation(fields: [frameId], references: [id], onDelete: Cascade)
+
+  @@index([inspectionId])
+  @@map("inspection_frame_detail")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+// Inspection Enums
+
+enum InspectionType {
+  ROUTINE
+  DETAILED
+  QUICK_CHECK
+  DISEASE_CHECK
+  QUEEN_CHECK
+  HARVEST
+  FEEDING
+  TREATMENT
+  OTHER
+
+  @@map("inspection_type")
+}
+
+enum OverallAssessment {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  CRITICAL
+
+  @@map("overall_assessment")
+}
+
+enum QueenQuality {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  ABSENT
+
+  @@map("queen_quality")
+}
+
+enum EggPattern {
+  EXCELLENT
+  GOOD
+  SPOTTY
+  POOR
+  NONE
+
+  @@map("egg_pattern")
+}
+
+enum BroodPattern {
+  EXCELLENT
+  GOOD
+  SPOTTY
+  POOR
+  NONE
+
+  @@map("brood_pattern")
+}
+
+enum PopulationEstimate {
+  VERY_STRONG
+  STRONG
+  MEDIUM
+  WEAK
+  VERY_WEAK
+
+  @@map("population_estimate")
+}
+
+enum Temperament {
+  VERY_GENTLE
+  GENTLE
+  NORMAL
+  DEFENSIVE
+  AGGRESSIVE
+
+  @@map("temperament")
+}
+
+enum SwarmRisk {
+  IMMINENT
+  HIGH
+  MODERATE
+  LOW
+  NONE
+
+  @@map("swarm_risk")
+}
+
+enum FindingType {
+  DISEASE
+  PEST
+  QUEEN_ISSUE
+  RESOURCE_SHORTAGE
+  CONGESTION
+  WEAK_POPULATION
+  AGGRESSIVE_BEHAVIOR
+  EXCELLENT_CONDITION
+  OTHER
+
+  @@map("finding_type")
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+
+  @@map("severity")
+}
+
+enum ActionPriority {
+  IMMEDIATE
+  URGENT
+  SOON
+  ROUTINE
+
+  @@map("action_priority")
+}
+
+enum ActionType {
+  ADDED_FRAMES
+  REMOVED_FRAMES
+  ADDED_SUPER
+  REMOVED_SUPER
+  FED
+  TREATED
+  ADDED_QUEEN
+  REMOVED_QUEEN
+  HARVESTED
+  MOVED_FRAMES
+  SPLIT
+  MERGED
+  DESTROYED_QUEEN_CELLS
+  ADDED_FOUNDATION
+  COMPRESSED
+  OTHER
+
+  @@map("action_type")
+}
+
+enum BroodAge {
+  EGGS
+  YOUNG_LARVAE
+  OLD_LARVAE
+  CAPPED
+  MIXED
+
+  @@map("brood_age")
+}
+
+// User & Core Enums
+
+enum UserType {
+  ADMIN
+  EXPLORER
+  OWNER
+  WORKER
+
+  @@map("user_type")
+}
+
+enum SubscriptionStatus {
+  FREE
+  ACTIVE
+  EXPIRED
+  CANCELLED
+
+  @@map("subscription_status")
+}
+
+enum SubscriptionPlan {
+  MONTHLY
+  YEARLY
+
+  @@map("subscription_plan")
+}
+
+enum MemberRole {
+  OWNER
+  WORKER
+  VIEWER
+
+  @@map("member_role")
+}
+
+enum MembershipStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  REMOVED
+
+  @@map("membership_status")
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  CRITICAL
+  REMINDER
+  ALERT
+
+  @@map("notification_type")
+}
+
+enum ApiaryType {
+  STATIONARY
+  MIGRATORY
+
+  @@map("apiary_type")
+}
+
+enum EquipmentAction {
+  ADDED
+  REMOVED
+  MAINTENANCE
+  REPAIR
+  DISPOSED
+
+  @@map("equipment_action")
+}
+
+model HiveType {
+  id          String   @id @default(uuid()) @db.Uuid
+  nameAr      String   @map("name_ar")
+  nameEn      String   @map("name_en")
+  description String?
+  
+  // Specs
+  defaultFrames Int      @default(10) @map("default_frames")
+  dimensions    String?  // e.g. "50x40x30 cm"
+  
+  // Media
+  imageUrl      String?  @map("image_url")
+  
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  hives     Hive[]
+  templates HiveTemplate[]
+
+  @@map("hive_type")
+}
+
+// Bee Genetics Catalog (Yemeni, Egyptian, etc.)
+model BeeBreed {
+  id          String   @id @default(uuid()) @db.Uuid
+  nameAr      String   @map("name_ar")
+  nameEn      String   @map("name_en")
+  description String?
+
+  // Characteristics (Analysis Data)
+  origin            String?
+  aggressionLevel   String?  @map("aggression_level") // e.g., "High", "Low"
+  hardiness         String?  // Disease resistance/Tolerance
+  productivity      String?  // Honey production potential
+  winteringAbility  String?  @map("wintering_ability")
+  
+  // Advanced Characteristics
+  characteristics   Json     @default("{}") // For dynamic future expansion
+  
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  hives   Hive[]
+  queens  Queen[]
+
+  @@map("bee_breed")
+}
+
+enum HiveStatus {
+  ACTIVE
+  QUEENLESS
+  WEAK
+  STRONG
+  SPLITTING
+  MERGED
+  DEAD
+  SOLD
+
+  @@map("hive_status")
+}
+
+enum StrengthRating {
+  VERY_STRONG
+  STRONG
+  MEDIUM
+  WEAK
+  VERY_WEAK
+  CRITICAL
+
+  @@map("strength_rating")
+}
+
+enum FrameType {
+  STANDARD
+  FOUNDATION
+  DRAWN
+  EMPTY
+  BROOD
+  HONEY
+  POLLEN
+
+  @@map("frame_type")
+}
+
+enum BroodType {
+  EGGS
+  LARVAE
+  CAPPED
+  MIXED
+  NONE
+
+  @@map("brood_type")
+}
+
+enum FrameCondition {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  DAMAGED
+
+  @@map("frame_condition")
+}
+
+enum QueenLocation {
+  LOWER
+  UPPER
+  UNKNOWN
+
+  @@map("queen_location")
+}
+
+enum SuperStatus {
+  ACTIVE
+  FILLING
+  READY
+  HARVESTED
+  REMOVED
+
+  @@map("super_status")
+}
+
+enum HiveEventType {
+  CREATED
+  SPLIT
+  MERGED
+  REQUEENED
+  MOVED
+  STRENGTH_CHANGE
+  DISEASE_DETECTED
+  DISEASE_TREATED
+  HARVESTED
+  FED
+  SUPER_ADDED
+  SUPER_REMOVED
+  INSPECTION
+  STATUS_CHANGE
+  OTHER
+
+  @@map("hive_event_type")
+}
+
+enum FlightActivity {
+  VERY_HIGH
+  HIGH
+  MODERATE
+  LOW
+  VERY_LOW
+  NONE
+
+  @@map("flight_activity")
+}
+
+enum CombBuildingRate {
+  RAPID
+  GOOD
+  MODERATE
+  SLOW
+  NONE
+
+  @@map("comb_building_rate")
+}
+
+enum PollenCollectionRate {
+  ABUNDANT
+  GOOD
+  MODERATE
+  LOW
+  NONE
+
+  @@map("pollen_collection_rate")
+}
+
+// ============================================================================
+// E. QUEENS & NUCLEI (Basic for MVP - 2 tables)
+// ============================================================================
+
+model Queen {
+  id String @id @default(uuid()) @db.Uuid
+
+  // Basic Information
+  queenNumber String? @map("queen_number")
+  name        String?
+
+  // Source
+  source          QueenSource
+  
+  // Genetics
+  beeBreedId String?   @map("bee_breed_id") @db.Uuid
+  beeBreed   BeeBreed? @relation(fields: [beeBreedId], references: [id])
+
+  breederApiaryId String?     @map("breeder_apiary_id") @db.Uuid
+  motherQueenId   String?     @map("mother_queen_id") @db.Uuid
+
+  // Dates
+  birthDate        DateTime? @map("birth_date") @db.Date
+  introductionDate DateTime? @map("introduction_date") @db.Date
+  deathDate        DateTime? @map("death_date") @db.Date
+
+  // Marking
+  marked     Boolean @default(false)
+  markColor  String? @map("mark_color")
+  markNumber String? @map("mark_number")
+
+  // Quality
+  qualityRating Int?           @map("quality_rating")
+  eggLayingRate EggLayingRate? @map("egg_laying_rate")
+  temperament   Temperament?
+
+  // Performance
+  productivityScore      Int? @map("productivity_score")
+  diseaseResistanceScore Int? @map("disease_resistance_score")
+
+  // Genetics
+  geneticsData Json? @map("genetics_data")
+
+  // Status
+  status           QueenStatus @default(ACTIVE) @map("status")
+  currentHiveId    String?     @map("current_hive_id") @db.Uuid
+  currentNucleusId String?     @map("current_nucleus_id") @db.Uuid
+
+  // Statistics
+  offspringCount Int @default(0) @map("offspring_count")
+  hivesQueened   Int @default(0) @map("hives_queened")
+
+  // Notes
+  notes String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  motherQueen    Queen?       @relation("QueenLineage", fields: [motherQueenId], references: [id])
+  daughters      Queen[]      @relation("QueenLineage")
+  currentHive    Hive?
+  currentNucleus Nucleus?     @relation(fields: [currentNucleusId], references: [id])
+  nuclei         Nucleus[]    @relation("NucleusQueen")
+  breederUser    UserProfile? @relation("QueenBreeder", fields: [breederApiaryId], references: [id])
+
+  @@index([status])
+  @@index([currentHiveId])
+  @@index([motherQueenId])
+  @@map("queen")
+}
+
+model Nucleus {
+  id       String @id @default(uuid()) @db.Uuid
+  apiaryId String @map("apiary_id") @db.Uuid
+
+  // Information
+  nucleusNumber String  @map("nucleus_number")
+  name          String?
+
+  // Configuration
+  frameCount Int @default(3) @map("frame_count")
+
+  // Queen
+  queenId               String?             @map("queen_id") @db.Uuid
+  queenIntroductionDate DateTime?           @map("queen_introduction_date") @db.Date
+  queenStatus           NucleusQueenStatus? @map("queen_status")
+
+  // Strength
+  strengthScore      Int?    @map("strength_score")
+  populationEstimate String? @map("population_estimate")
+
+  // Purpose
+  purpose NucleusPurpose
+
+  // Dates
+  createdDate    DateTime  @map("created_date") @db.Date
+  graduationDate DateTime? @map("graduation_date") @db.Date
+
+  // Status
+  status NucleusStatus @default(ACTIVE)
+
+  // Notes
+  notes String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  apiary       Apiary  @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  queen        Queen?  @relation("NucleusQueen", fields: [queenId], references: [id])
+  queensHoused Queen[] @relation(fields: [], references: [])
+
+  @@index([apiaryId])
+  @@index([queenId])
+  @@map("nucleus")
+}
+
+// ============================================================================
+// F. FEEDING (3 tables)
+// ============================================================================
+
+model FeedingRecord {
+  id       String @id @default(uuid()) @db.Uuid
+  apiaryId String @map("apiary_id") @db.Uuid
+  hiveId   String @map("hive_id") @db.Uuid
+
+  // Date
+  feedingDate DateTime @map("feeding_date") @db.Timestamptz
+
+  // Type & Location
+  feedingLocation FeedingLocation @map("feeding_location")
+  feedingMethod   FeedingMethod?  @map("feeding_method")
+
+  // Content
+  contentType        FeedingContentType @map("content_type")
+  sugarConcentration String?            @map("sugar_concentration")
+  quantityKg         Decimal?           @map("quantity_kg") @db.Decimal(10, 2)
+  quantityLiters     Decimal?           @map("quantity_liters") @db.Decimal(10, 2)
+
+  // Purpose
+  purpose FeedingPurpose
+
+  // Consumption
+  consumedCompletely Boolean?  @map("consumed_completely")
+  consumptionDate    DateTime? @map("consumption_date") @db.Timestamptz
+  remainingAmount    Decimal?  @map("remaining_amount") @db.Decimal(10, 2)
+
+  // Honey Quality Impact
+  honeyQualityImpact   HoneyQualityImpact @default(NONE) @map("honey_quality_impact")
+  daysUntilSafeHarvest Int?               @map("days_until_safe_harvest")
+
+  // Side Effects
+  sideEffects String[] @map("side_effects")
+
+  // Cost
+  cost Decimal? @db.Decimal(10, 2)
+
+  // Notes
+  notes String?
+
+  // Tracking
+  fedBy     String?  @map("fed_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  apiary Apiary       @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  hive   Hive         @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+  feeder UserProfile? @relation(fields: [fedBy], references: [id])
+
+  @@index([apiaryId, feedingDate(sort: Desc)])
+  @@index([hiveId, feedingDate(sort: Desc)])
+  @@index([honeyQualityImpact])
+  @@map("feeding_record")
+}
+
+model FeedingRecommendation {
+  id       String  @id @default(uuid()) @db.Uuid
+  apiaryId String  @map("apiary_id") @db.Uuid
+  hiveId   String? @map("hive_id") @db.Uuid
+
+  // Recommendation
+  recommendationDate DateTime       @default(now()) @map("recommendation_date") @db.Timestamptz
+  priority           ActionPriority
+  urgency            FeedingUrgency
+
+  // Feeding Details
+  recommendedType         String    @map("recommended_type")
+  recommendedLocation     String    @map("recommended_location")
+  recommendedQuantity     Decimal   @map("recommended_quantity") @db.Decimal(10, 2)
+  recommendedStartDate    DateTime? @map("recommended_start_date") @db.Date
+  recommendedDurationDays Int?      @map("recommended_duration_days")
+
+  // Reasoning
+  reasoning String
+  factors   Json?
+
+  // Expectations
+  expectedBenefits String[] @map("expected_benefits")
+  expectedRisks    String[] @map("expected_risks")
+  estimatedCost    Decimal? @map("estimated_cost") @db.Decimal(10, 2)
+  expectedRoi      Decimal? @map("expected_roi") @db.Decimal(10, 2)
+
+  // Confidence
+  confidenceScore Int @map("confidence_score")
+
+  // Status
+  status RecommendationStatus @default(PENDING)
+
+  // Implementation
+  implementedFeedingId String?   @map("implemented_feeding_id") @db.Uuid
+  implementedDate      DateTime? @map("implemented_date") @db.Timestamptz
+
+  // Evaluation
+  outcomeRating Int?    @map("outcome_rating")
+  outcomeNotes  String? @map("outcome_notes")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz
+
+  // Relations
+  apiary Apiary @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  hive   Hive?  @relation(fields: [hiveId], references: [id])
+
+  @@index([apiaryId, recommendationDate(sort: Desc)])
+  @@index([status])
+  @@map("feeding_recommendation")
+}
+
+model FeedingSchedule {
+  id       String  @id @default(uuid()) @db.Uuid
+  apiaryId String  @map("apiary_id") @db.Uuid
+  hiveId   String? @map("hive_id") @db.Uuid
+
+  // Schedule
+  scheduleName String    @map("schedule_name")
+  startDate    DateTime  @map("start_date") @db.Date
+  endDate      DateTime? @map("end_date") @db.Date
+
+  // Frequency
+  frequency  FeedingFrequency
+  customDays Int[]            @map("custom_days")
+
+  // Feeding Details
+  feedingType        String  @map("feeding_type")
+  feedingLocation    String  @map("feeding_location")
+  quantityPerFeeding Decimal @map("quantity_per_feeding") @db.Decimal(10, 2)
+
+  // Status
+  isActive Boolean @default(true) @map("is_active")
+
+  // Tracking
+  feedingsCompleted Int       @default(0) @map("feedings_completed")
+  feedingsPlanned   Int?      @map("feedings_planned")
+  lastFeedingDate   DateTime? @map("last_feeding_date") @db.Timestamptz
+  nextFeedingDate   DateTime? @map("next_feeding_date") @db.Date
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  apiary Apiary @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  hive   Hive?  @relation(fields: [hiveId], references: [id])
+
+  @@index([apiaryId])
+  @@index([nextFeedingDate])
+  @@map("feeding_schedule")
+}
+
+// ============================================================================
+// G. DISEASES (2 tables for MVP)
+// ============================================================================
+
+model DiseaseLibrary {
+  id String @id @default(uuid()) @db.Uuid
+
+  // Names
+  nameAr         String  @map("name_ar")
+  nameEn         String  @map("name_en")
+  scientificName String? @map("scientific_name")
+
+  // Classification
+  diseaseType    DiseaseType
+  severity       DiseaseSeverity
+  contagiousness Contagiousness
+  mortalityRate  Int?            @map("mortality_rate")
+
+  // Symptoms
+  symptoms Json
+
+  // Diagnosis
+  diagnosisMethods Json? @map("diagnosis_methods")
+
+  // Treatment
+  treatable  Boolean @default(true)
+
+  // Drastic Measures
+  burningRequired        Boolean @default(false) @map("burning_required")
+  quarantineRequired     Boolean @default(false) @map("quarantine_required")
+  quarantineDurationDays Int?    @map("quarantine_duration_days")
+  reportingMandatory     Boolean @default(false) @map("reporting_mandatory")
+
+  // Prevention
+  preventionMethods String[] @map("prevention_methods")
+
+  // Media
+  images String[]
+  videos String[]
+
+  // References
+  references Json?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  diseaseRecords DiseaseRecord[]
+  treatments     DiseaseTreatment[]
+
+  @@index([diseaseType])
+  @@index([severity])
+  @@map("disease_library")
+}
+
+model DiseaseTreatment {
+  id        String   @id @default(uuid()) @db.Uuid
+  diseaseId String   @map("disease_id") @db.Uuid
+  
+  // Treatment Details
+  nameAr         String   @map("name_ar")
+  nameEn         String   @map("name_en")
+  description    String?
+  type           TreatmentType // e.g. CHEMICAL, ORGANIC, PHYSICAL
+  
+  // Application
+  applicationMethod String @map("application_method")
+  dosage            String?
+  durationDays      Int?   @map("duration_days")
+  frequency         String? // e.g. "Once a week"
+  
+  // Constraints
+  season           String[] // e.g. ["SPRING", "FALL"]
+  temperatureMin   Int?     @map("temperature_min")
+  temperatureMax   Int?     @map("temperature_max")
+  honeySafe        Boolean  @default(false) @map("honey_safe")
+  withdrawalPeriod Int?     @map("withdrawal_period") // Days before harvest
+
+  // Effectiveness
+  effectiveness    Int?     @map("effectiveness") // 1-100%
+  
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  disease   DiseaseLibrary @relation(fields: [diseaseId], references: [id], onDelete: Cascade)
+
+  @@index([diseaseId])
+  @@map("disease_treatment")
+}
+
+enum TreatmentType {
+  CHEMICAL
+  ORGANIC
+  PHYSICAL
+  BIOLOGICAL
+  MANAGEMENT
+  DIETARY
+  
+  @@map("treatment_type")
+}
+
+model DiseaseRecord {
+  id        String @id @default(uuid()) @db.Uuid
+  apiaryId  String @map("apiary_id") @db.Uuid
+  diseaseId String @map("disease_id") @db.Uuid
+
+  // Detection
+  firstDetectedDate DateTime @map("first_detected_date") @db.Timestamptz
+  detectedBy        String   @map("detected_by") @db.Uuid
+
+  // Confirmation
+  confirmed          Boolean   @default(false)
+  confirmationMethod String?   @map("confirmation_method")
+  confirmationDate   DateTime? @map("confirmation_date") @db.Timestamptz
+
+  // Spread
+  affectedHives      String[] @map("affected_hives") @db.Uuid
+  totalAffectedHives Int      @map("total_affected_hives")
+  percentageOfApiary Decimal? @map("percentage_of_apiary") @db.Decimal(5, 2)
+
+  spreading  Boolean  @default(false)
+  spreadRate Decimal? @map("spread_rate") @db.Decimal(5, 2)
+
+  // Status
+  status DiseaseStatus @default(ACTIVE)
+
+  // Treatment (simplified for MVP)
+  treatmentNotes String? @map("treatment_notes")
+
+  // Drastic Actions
+  drasticActions Json? @map("drastic_actions")
+
+  // Reporting
+  reportedToAuthorities Boolean   @default(false) @map("reported_to_authorities")
+  reportDate            DateTime? @map("report_date") @db.Timestamptz
+  authorityResponse     String?   @map("authority_response")
+
+  // Community Alert
+  communityAlertSent Boolean @default(false) @map("community_alert_sent")
+
+  // Resolution
+  resolutionDate DateTime? @map("resolution_date") @db.Timestamptz
+  outcome        String?
+
+  // Statistics
+  hivesDestroyed Int      @default(0) @map("hives_destroyed")
+  hivesRecovered Int      @default(0) @map("hives_recovered")
+  financialLoss  Decimal? @map("financial_loss") @db.Decimal(10, 2)
+
+  notes String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  apiary   Apiary         @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  disease  DiseaseLibrary @relation(fields: [diseaseId], references: [id])
+  detector UserProfile    @relation(fields: [detectedBy], references: [id])
+  hives    Hive[]
+
+  @@index([apiaryId, firstDetectedDate(sort: Desc)])
+  @@index([status])
+  @@map("disease_record")
+}
+
+// ============================================================================
+// H. HARVEST (3 tables for MVP)
+// ============================================================================
+
+model HarvestRecord {
+  id       String @id @default(uuid()) @db.Uuid
+  apiaryId String @map("apiary_id") @db.Uuid
+
+  // Type
+  harvestType HarvestType @map("harvest_type")
+
+  // Date
+  harvestDate DateTime @map("harvest_date") @db.Timestamptz
+
+  // Quantity
+  totalQuantity Decimal     @map("total_quantity") @db.Decimal(10, 2)
+  unit          HarvestUnit
+
+  // Quality
+  qualityGrade QualityGrade? @map("quality_grade")
+  qualityScore Int?          @map("quality_score")
+
+  // Details
+  details Json?
+
+  // Financial
+  estimatedValue Decimal? @map("estimated_value") @db.Decimal(10, 2)
+  pricePerUnit   Decimal? @map("price_per_unit") @db.Decimal(10, 2)
+  totalValue     Decimal? @map("total_value") @db.Decimal(10, 2)
+
+  // Media
+  images String[]
+
+  // Tracking
+  harvestedBy String?  @map("harvested_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  notes String?
+
+  // Relations
+  apiary                Apiary                 @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  honeyHarvests         HoneyHarvest[]
+  pollenHarvests        PollenHarvest[]
+  royalJellyProductions RoyalJellyProduction[]
+
+  @@index([apiaryId, harvestDate(sort: Desc)])
+  @@index([harvestType, harvestDate(sort: Desc)])
+  @@map("harvest_record")
+}
+
+model HoneyHarvest {
+  id              String @id @default(uuid()) @db.Uuid
+  harvestRecordId String @map("harvest_record_id") @db.Uuid
+  hiveId          String @map("hive_id") @db.Uuid
+
+  // Quantity
+  quantityKg      Decimal @map("quantity_kg") @db.Decimal(10, 2)
+  framesHarvested Int?    @map("frames_harvested")
+
+  // Quality
+  moisturePercentage Decimal? @map("moisture_percentage") @db.Decimal(5, 2)
+  purityScore        Int?     @map("purity_score")
+
+  // Sugar Feeding Impact
+  sugarFeedingImpact Json? @map("sugar_feeding_impact")
+
+  // Botanical Source
+  botanicalSource String?  @map("botanical_source")
+  monofloral      Boolean?
+  plantSources    Json?    @map("plant_sources")
+
+  // Characteristics
+  color           String?
+  taste           String?
+  aroma           String?
+  crystallization String?
+
+  // Value
+  pricePerKg Decimal? @map("price_per_kg") @db.Decimal(10, 2)
+  totalValue Decimal? @map("total_value") @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  harvestRecord HarvestRecord @relation(fields: [harvestRecordId], references: [id], onDelete: Cascade)
+  hive          Hive          @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+  HoneyBatch    HoneyBatch?   @relation(fields: [honeyBatchId], references: [id])
+  honeyBatchId  String?       @db.Uuid
+
+  @@index([hiveId])
+  @@map("honey_harvest")
+}
+
+model PollenHarvest {
+  id              String @id @default(uuid()) @db.Uuid
+  harvestRecordId String @map("harvest_record_id") @db.Uuid
+  hiveId          String @map("hive_id") @db.Uuid
+
+  // Quantity
+  quantityKg Decimal @map("quantity_kg") @db.Decimal(10, 2)
+
+  // Method
+  collectionMethod       PollenCollectionMethod @map("collection_method")
+  trapInstalledDate      DateTime?              @map("trap_installed_date") @db.Date
+  trapRemovedDate        DateTime?              @map("trap_removed_date") @db.Date
+  collectionDurationDays Int?                   @map("collection_duration_days")
+
+  // Colors (indicates sources)
+  pollenColors Json? @map("pollen_colors")
+
+  // Quality
+  moistureContent Decimal? @map("moisture_content") @db.Decimal(5, 2)
+  proteinContent  Decimal? @map("protein_content") @db.Decimal(5, 2)
+
+  // Value
+  pricePerKg Decimal? @map("price_per_kg") @db.Decimal(10, 2)
+  totalValue Decimal? @map("total_value") @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  harvestRecord HarvestRecord @relation(fields: [harvestRecordId], references: [id], onDelete: Cascade)
+  hive          Hive          @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+
+  @@index([hiveId])
+  @@map("pollen_harvest")
+}
+
+// ============================================================================
+// I. OPERATIONS (2 tables for MVP)
+// ============================================================================
+
+model SplitOperation {
+  id           String @id @default(uuid()) @db.Uuid
+  apiaryId     String @map("apiary_id") @db.Uuid
+  motherHiveId String @map("mother_hive_id") @db.Uuid
+
+  // Dates
+  splitDate      DateTime  @map("split_date") @db.Date
+  completionDate DateTime? @map("completion_date") @db.Date
+
+  // New Hives
+  newHivesCount Int      @map("new_hives_count")
+  newHiveIds    String[] @map("new_hive_ids") @db.Uuid
+
+  // Method
+  method SplitMethod
+
+  // Resource Distribution
+  resourceDistribution Json @map("resource_distribution")
+
+  // Status
+  status OperationStatus @default(PLANNED)
+
+  // Success
+  successfulHives Int      @default(0) @map("successful_hives")
+  failedHives     Int      @default(0) @map("failed_hives")
+  successRate     Decimal? @map("success_rate") @db.Decimal(5, 2)
+
+  // Financial
+  costs      Json?
+  valueAdded Decimal? @map("value_added") @db.Decimal(10, 2)
+  roi        Decimal? @db.Decimal(10, 2)
+
+  // Evaluation
+  evaluation Json?
+
+  notes String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  apiary     Apiary @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  motherHive Hive   @relation("MotherHive", fields: [motherHiveId], references: [id])
+
+  @@index([apiaryId, splitDate(sort: Desc)])
+  @@map("split_operation")
+}
+
+model MergeOperation {
+  id             String @id @default(uuid()) @db.Uuid
+  apiaryId       String @map("apiary_id") @db.Uuid
+  survivorHiveId String @map("survivor_hive_id") @db.Uuid
+  mergedHiveId   String @map("merged_hive_id") @db.Uuid
+
+  // Date
+  mergeDate DateTime @map("merge_date") @db.Date
+
+  // Method
+  method        MergeMethod
+  methodDetails Json?       @map("method_details")
+
+  // Outcome
+  outcome Json
+
+  // Equipment Recovered
+  equipmentRecovered Json? @map("equipment_recovered")
+
+  // Financial
+  financialAnalysis Json? @map("financial_analysis")
+
+  notes String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  apiary       Apiary @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  survivorHive Hive   @relation("SurvivorHive", fields: [survivorHiveId], references: [id])
+  mergedHive   Hive   @relation("MergedHive", fields: [mergedHiveId], references: [id])
+
+  @@index([apiaryId, mergeDate(sort: Desc)])
+  @@map("merge_operation")
+}
+
+model SuperOperation {
+  id            String   @id @default(uuid()) @db.Uuid
+  apiaryId      String   @map("apiary_id") @db.Uuid
+  hiveId        String   @map("hive_id") @db.Uuid
+
+  operationType String   @map("operation_type")
+  operationDate DateTime @map("operation_date") @db.Date
+  superNumber   Int      @map("super_number")
+  framesInSuper Int      @map("frames_in_super")
+  hasExcluder   Boolean  @default(false) @map("has_excluder")
+  framesMovedUp String[] @map("frames_moved_up")
+  expectedYield Decimal? @map("expected_yield") @db.Decimal(10, 2)
+
+  performedBy String  @map("performed_by") @db.Uuid
+  notes       String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  apiary Apiary @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  hive   Hive   @relation(fields: [hiveId], references: [id])
+
+  @@index([apiaryId, operationDate(sort: Desc)])
+  @@map("super_operation")
+}
+
+model ConsolidationOperation {
+  id     String @id @default(uuid()) @db.Uuid
+  hiveId String @map("hive_id") @db.Uuid
+
+  // Date
+  consolidationDate DateTime @map("consolidation_date") @db.Date
+
+  // Before & After
+  beforeState Json @map("before_state")
+  afterState  Json @map("after_state")
+
+  // Procedure
+  procedureDetails Json @map("procedure_details")
+
+  // Winter Readiness
+  winterReadiness Json? @map("winter_readiness")
+
+  // Equipment Recovered
+  equipmentRecovered Json? @map("equipment_recovered")
+
+  notes String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  hive Hive @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+
+  @@index([hiveId, consolidationDate(sort: Desc)])
+  @@map("consolidation_operation")
+}
+
+model SwarmEvent {
+  id           String  @id @default(uuid()) @db.Uuid
+  apiaryId     String  @map("apiary_id") @db.Uuid
+  sourceHiveId String? @map("source_hive_id") @db.Uuid
+
+  // Date
+  swarmDate DateTime @map("swarm_date") @db.Timestamptz
+
+  // Type
+  eventType SwarmEventType @map("event_type")
+
+  // Details
+  swarmSize     SwarmSize?
+  estimatedBees Int?       @map("estimated_bees")
+
+  // Capture
+  captured      Boolean @default(false)
+  captureMethod String? @map("capture_method")
+  newHiveId     String? @map("new_hive_id") @db.Uuid
+
+  // Cause
+  probableCause String[] @map("probable_cause")
+
+  // Impact
+  impactOnSourceHive String?  @map("impact_on_source_hive")
+  productionLossKg   Decimal? @map("production_loss_kg") @db.Decimal(10, 2)
+
+  notes  String?
+  images String[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  apiary     Apiary @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  sourceHive Hive?  @relation("SourceHive", fields: [sourceHiveId], references: [id])
+  newHive    Hive?  @relation("NewHive", fields: [newHiveId], references: [id])
+
+  @@index([apiaryId, swarmDate(sort: Desc)])
+  @@map("swarm_event")
+}
+
+// ============================================================================
+// J. WEATHER (2 tables for MVP)
+// ============================================================================
+
+model WeatherData {
+  id       String @id @default(uuid()) @db.Uuid
+  apiaryId String @map("apiary_id") @db.Uuid
+
+  // Date & Time
+  date DateTime  @db.Date
+  time DateTime? @db.Time
+
+  // Source
+  source      WeatherSource
+  apiProvider String?       @map("api_provider")
+
+  // Data
+  temperatureCelsius Decimal? @map("temperature_celsius") @db.Decimal(5, 2)
+  temperatureMin     Decimal? @map("temperature_min") @db.Decimal(5, 2)
+  temperatureMax     Decimal? @map("temperature_max") @db.Decimal(5, 2)
+
+  humidityPercentage Int? @map("humidity_percentage")
+
+  rainfallMm     Decimal @default(0) @map("rainfall_mm") @db.Decimal(10, 2)
+  rainfallManual Boolean @default(false) @map("rainfall_manual")
+
+  windSpeedKmh  Decimal? @map("wind_speed_kmh") @db.Decimal(5, 2)
+  windDirection String?  @map("wind_direction")
+
+  conditions String?
+
+  // Bee Indicators
+  beeFlightConditions BeeFlightConditions? @map("bee_flight_conditions")
+  foragingOpportunity Boolean?             @map("foraging_opportunity")
+
+  // Tracking
+  recordedBy String?  @map("recorded_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  apiary   Apiary       @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  recorder UserProfile? @relation(fields: [recordedBy], references: [id])
+
+  @@unique([apiaryId, date, time])
+  @@index([apiaryId, date(sort: Desc)])
+  @@map("weather_data")
+}
+
+model WeatherForecast {
+  id       String @id @default(uuid()) @db.Uuid
+  apiaryId String @map("apiary_id") @db.Uuid
+
+  // Dates
+  forecastDate    DateTime @map("forecast_date") @db.Date
+  forecastForDate DateTime @map("forecast_for_date") @db.Date
+
+  // Data
+  temperatureMin           Decimal? @map("temperature_min") @db.Decimal(5, 2)
+  temperatureMax           Decimal? @map("temperature_max") @db.Decimal(5, 2)
+  precipitationProbability Int?     @map("precipitation_probability")
+  rainfallExpectedMm       Decimal? @map("rainfall_expected_mm") @db.Decimal(10, 2)
+  conditions               String?
+
+  // Recommendations
+  beeActivityForecast String?  @map("bee_activity_forecast")
+  recommendations     String[]
+
+  // Source
+  apiProvider String? @map("api_provider")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  apiary Apiary @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+
+  @@index([apiaryId, forecastForDate])
+  @@map("weather_forecast")
+}
+
+model WeatherImpact {
+  id       String @id @default(uuid()) @db.Uuid
+  apiaryId String @map("apiary_id") @db.Uuid
+
+  // Period
+  startDate DateTime @map("start_date") @db.Date
+  endDate   DateTime @map("end_date") @db.Date
+
+  // Event
+  eventType WeatherEventType @map("event_type")
+  severity  Severity?
+
+  // Impact
+  impactDescription String   @map("impact_description")
+  affectedHives     String[] @map("affected_hives") @db.Uuid
+
+  // Actions
+  actionsTaken String[] @map("actions_taken")
+
+  // Outcome
+  outcome String?
+
+  notes String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  apiary Apiary @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+
+  @@index([apiaryId, startDate(sort: Desc)])
+  @@map("weather_impact")
+}
+
+// ============================================================================
+// K. PLANTS (2 tables for MVP)
+// ============================================================================
+
+model PlantLibrary {
+  id String @id @default(uuid()) @db.Uuid
+
+  // Names
+  scientificName String   @unique @map("scientific_name")
+  commonNameAr   String   @map("common_name_ar")
+  commonNameEn   String?  @map("common_name_en")
+  localNames     String[] @map("local_names")
+  synonyms       String[]
+
+  // Classification
+  plantType PlantType @map("plant_type")
+  family    String?
+
+  // Description
+  descriptionAr   String?  @map("description_ar")
+  descriptionEn   String?  @map("description_en")
+  heightMinMeters Decimal? @map("height_min_meters") @db.Decimal(5, 2)
+  heightMaxMeters Decimal? @map("height_max_meters") @db.Decimal(5, 2)
+
+  // Beekeeping Value
+  beekeepingValue Json @map("beekeeping_value")
+
+  // Flowering
+  flowering Json
+
+  // Environment
+  environment Json?
+
+  // Geographic Distribution
+  nativeRegions     String[] @map("native_regions")
+  cultivatedRegions String[] @map("cultivated_regions")
+
+  // Community Data
+  communityData Json @default("{}") @map("community_data")
+
+  // Media
+  images String[]
+  videos String[]
+
+  // References
+  references Json?
+
+  // Tracking
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  verified   Boolean  @default(false)
+  verifiedBy String?  @map("verified_by") @db.Uuid
+
+  // Relations
+  localPlants LocalPlant[]
+
+  @@index([plantType])
+  @@map("plant_library")
+}
+
+model LocalPlant {
+  id       String @id @default(uuid()) @db.Uuid
+  apiaryId String @map("apiary_id") @db.Uuid
+  plantId  String @map("plant_id") @db.Uuid
+
+  // Location
+  locationLat Decimal? @map("location_lat") @db.Decimal(10, 8)
+  locationLng Decimal? @map("location_lng") @db.Decimal(11, 8)
+  distanceKm  Decimal? @map("distance_km") @db.Decimal(10, 2)
+  direction   String?
+  description String?
+
+  // Abundance
+  coverage       Decimal       @db.Decimal(10, 2)
+  coverageUnit   CoverageUnit  @map("coverage_unit")
+  density        PlantDensity?
+  abundanceScore Int?          @map("abundance_score")
+
+  // Bee Attraction
+  beeAttraction Json @default("{}") @map("bee_attraction")
+
+  // Local Blooming
+  localBlooming Json? @map("local_blooming")
+  bloomStartDate DateTime? @map("bloom_start_date") @db.Date
+  bloomEndDate   DateTime? @map("bloom_end_date")   @db.Date
+
+  // Estimated Production
+  estimatedProduction Json? @map("estimated_production")
+
+  // Status
+  status LocalPlantStatus @default(ACTIVE)
+
+  // Tracking
+  addedDate   DateTime @default(now()) @map("added_date") @db.Date
+  addedBy     String?  @map("added_by") @db.Uuid
+  lastUpdated DateTime @default(now()) @map("last_updated") @db.Timestamptz
+
+  notes  String?
+  images String[]
+
+  // Relations
+  apiary       Apiary             @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  plant        PlantLibrary       @relation(fields: [plantId], references: [id])
+  observations PlantObservation[]
+
+  @@index([apiaryId])
+  @@index([plantId])
+  @@index([status])
+  @@map("local_plant")
+}
+
+model PlantObservation {
+  id           String @id @default(uuid()) @db.Uuid
+  localPlantId String @map("local_plant_id") @db.Uuid
+
+  // Date & Time
+  observationDate DateTime  @map("observation_date") @db.Timestamptz
+  observationTime DateTime? @map("observation_time") @db.Time
+
+  // Activity
+  beeActivityLevel  BeeActivityLevel @map("bee_activity_level")
+  estimatedBeeCount Int?             @map("estimated_bee_count")
+
+  // Conditions
+  weatherConditions  String?  @map("weather_conditions")
+  temperatureCelsius Decimal? @map("temperature_celsius") @db.Decimal(5, 2)
+
+  // Blooming
+  bloomStatus    BloomStatus? @map("bloom_status")
+  bloomIntensity Int?         @map("bloom_intensity")
+
+  // Notes
+  notes  String?
+  images String[]
+
+  // Tracking
+  observedBy String?  @map("observed_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  localPlant LocalPlant   @relation(fields: [localPlantId], references: [id], onDelete: Cascade)
+  observer   UserProfile? @relation(fields: [observedBy], references: [id])
+
+  @@index([localPlantId, observationDate(sort: Desc)])
+  @@map("plant_observation")
+}
+
+model ForageAssessment {
+  id       String @id @default(uuid()) @db.Uuid
+  apiaryId String @map("apiary_id") @db.Uuid
+
+  // Assessment
+  assessmentDate DateTime @default(now()) @map("assessment_date") @db.Timestamptz
+
+  // Overall
+  overallScore  Int               @map("overall_score")
+  overallRating OverallAssessment @map("overall_rating")
+  sufficient    Boolean
+  status        String
+
+  // Plant Analysis
+  plantAnalysis Json @map("plant_analysis")
+
+  // Carrying Capacity
+  carryingCapacity Json @map("carrying_capacity")
+
+  // Competition Analysis
+  competitionAnalysis Json @map("competition_analysis")
+
+  // Expected Production
+  expectedProduction Json? @map("expected_production")
+
+  // Annual Calendar
+  annualCalendar Json? @map("annual_calendar")
+
+  // Risks & Recommendations
+  risks           Json @default("[]")
+  recommendations Json @default("[]")
+
+  // Trends
+  trends Json?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  apiary Apiary @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+
+  @@index([apiaryId, assessmentDate(sort: Desc)])
+  @@map("forage_assessment")
+}
+
+// ============================================================================
+// L. SYSTEM & HELPERS (7 tables)
+// ============================================================================
+
+model SyncEvent {
+  id     String  @id @default(uuid()) @db.Uuid
+  userId String? @map("user_id") @db.Uuid
+
+  // Event
+  eventType    String @map("event_type")
+  resourceType String @map("resource_type")
+  resourceId   String @map("resource_id") @db.Uuid
+
+  // Action
+  action SyncAction
+
+  // Data
+  data Json?
+
+  // Tracking
+  deviceId        String?  @map("device_id")
+  clientTimestamp DateTime @map("client_timestamp") @db.Timestamptz
+  serverTimestamp DateTime @default(now()) @map("server_timestamp") @db.Timestamptz
+
+  synced   Boolean   @default(false)
+  syncedAt DateTime? @map("synced_at") @db.Timestamptz
+
+  // Conflict
+  conflict           Boolean @default(false)
+  conflictResolved   Boolean @default(false) @map("conflict_resolved")
+  resolutionStrategy String? @map("resolution_strategy")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([userId, serverTimestamp(sort: Desc)])
+  @@index([resourceType, resourceId])
+  @@index([synced])
+  @@map("sync_event")
+}
+
+model OfflineQueue {
+  id       String @id @default(uuid()) @db.Uuid
+  userId   String @map("user_id") @db.Uuid
+  deviceId String @map("device_id")
+
+  // Event
+  operation    String  @map("operation")
+  resourceType String  @map("resource_type")
+  resourceId   String? @map("resource_id") @db.Uuid
+
+  // Data
+  payload Json
+
+  // Status
+  status      QueueStatus @default(PENDING)
+  attempts    Int         @default(0)
+  maxAttempts Int         @default(3) @map("max_attempts")
+
+  // Tracking
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  processedAt DateTime? @map("processed_at") @db.Timestamptz
+
+  errorMessage String? @map("error_message")
+
+  @@index([userId, status])
+  @@index([status])
+  @@map("offline_queue")
+}
+
+model SystemSetting {
+  key         String   @id
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy   String?  @map("updated_by") @db.Uuid
+
+  @@map("system_setting")
+}
+
+model AIRecommendationLog {
+  id String @id @default(uuid()) @db.Uuid
+
+  // Type
+  recommendationType String @map("recommendation_type")
+
+  // Input/Output
+  inputData       Json     @map("input_data")
+  recommendation  Json
+  confidenceScore Decimal? @map("confidence_score") @db.Decimal(5, 2)
+
+  // Model
+  modelVersion String? @map("model_version")
+  modelName    String? @map("model_name")
+
+  // Implementation
+  accepted    Boolean? @default(false)
+  implemented Boolean  @default(false)
+
+  // Evaluation
+  outcomeRating Int?    @map("outcome_rating")
+  outcomeNotes  String? @map("outcome_notes")
+
+  // Tracking
+  userId   String? @map("user_id") @db.Uuid
+  apiaryId String? @map("apiary_id") @db.Uuid
+  hiveId   String? @map("hive_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user   UserProfile? @relation(fields: [userId], references: [id])
+  apiary Apiary?      @relation(fields: [apiaryId], references: [id])
+  hive   Hive?        @relation(fields: [hiveId], references: [id])
+
+  @@index([recommendationType, createdAt(sort: Desc)])
+  @@map("ai_recommendation_log")
+}
+
+model Alert {
+  id String @id @default(uuid()) @db.Uuid
+
+  // Target
+  userId   String? @map("user_id") @db.Uuid
+  apiaryId String? @map("apiary_id") @db.Uuid
+  hiveId   String? @map("hive_id") @db.Uuid
+
+  // Content
+  alertType String         @map("alert_type")
+  priority  ActionPriority
+
+  title   String
+  message String
+
+  // Action
+  actionRequired Boolean   @default(false) @map("action_required")
+  actionUrl      String?   @map("action_url")
+  actionDeadline DateTime? @map("action_deadline") @db.Timestamptz
+
+  // Status
+  status AlertStatus @default(ACTIVE)
+
+  acknowledgedAt DateTime? @map("acknowledged_at") @db.Timestamptz
+  acknowledgedBy String?   @map("acknowledged_by") @db.Uuid
+
+  resolvedAt DateTime? @map("resolved_at") @db.Timestamptz
+
+  // Tracking
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz
+
+  // Relations
+  user         UserProfile? @relation(fields: [userId], references: [id])
+  apiary       Apiary?      @relation(fields: [apiaryId], references: [id])
+  hive         Hive?        @relation(fields: [hiveId], references: [id])
+  acknowledger UserProfile? @relation("AcknowledgedBy", fields: [acknowledgedBy], references: [id])
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([apiaryId, createdAt(sort: Desc)])
+  @@map("alert")
+}
+
+model SearchHistory {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+
+  searchQuery  String  @map("search_query")
+  searchType   String? @map("search_type")
+  resultsCount Int?    @map("results_count")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user UserProfile @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("search_history")
+}
+
+model AppFeedback {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+
+  // Type
+  feedbackType FeedbackType @map("feedback_type")
+
+  title       String
+  description String
+
+  rating Int?
+
+  // Device
+  deviceInfo Json?   @map("device_info")
+  appVersion String? @map("app_version")
+
+  // Status
+  status FeedbackStatus @default(SUBMITTED)
+
+  // Response
+  adminResponse String?   @map("admin_response")
+  respondedAt   DateTime? @map("responded_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user UserProfile @relation(fields: [userId], references: [id])
+
+  @@index([status, createdAt(sort: Desc)])
+  @@map("app_feedback")
+}
+
+model RoyalJellyProduction {
+  id     String @id @default(uuid()) @db.Uuid
+  // Note: Removed rearingCycleId as QueenRearingCycle not in MVP
+  hiveId String @map("hive_id") @db.Uuid
+
+  // Dates (precise to the hour!)
+  graftingTime DateTime @map("grafting_time") @db.Timestamptz
+  harvestTime  DateTime @map("harvest_time") @db.Timestamptz
+  hoursElapsed Decimal  @map("hours_elapsed") @db.Decimal(5, 2)
+
+  // Cups
+  cupsHarvested Int @map("cups_harvested")
+
+  // Quantity
+  totalQuantityGrams Decimal @map("total_quantity_grams") @db.Decimal(10, 2)
+  averagePerCupMg    Decimal @map("average_per_cup_mg") @db.Decimal(10, 2)
+
+  // Quality
+  qualityGrade QualityGrade? @map("quality_grade")
+  color        String?
+  consistency  String?
+
+  // Value
+  pricePerGram Decimal? @map("price_per_gram") @db.Decimal(10, 2)
+  totalValue   Decimal? @map("total_value") @db.Decimal(10, 2)
+
+  // Cost & ROI
+  productionCost Decimal? @map("production_cost") @db.Decimal(10, 2)
+  netProfit      Decimal? @map("net_profit") @db.Decimal(10, 2)
+  roiPercentage  Decimal? @map("roi_percentage") @db.Decimal(10, 2)
+
+  // Evaluation
+  successRating Int? @map("success_rating")
+
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  hive          Hive           @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+  harvestRecord HarvestRecord? @relation(fields: [id], references: [id])
+
+  @@map("royal_jelly_production")
+}
+
+// ============================================================================
+// ADDITIONAL ENUMS
+// ============================================================================
+
+enum QueenSource {
+  BRED
+  PURCHASED
+  SWARM
+  SPLIT
+  UNKNOWN
+
+  @@map("queen_source")
+}
+
+enum EggLayingRate {
+  EXCELLENT
+  VERY_GOOD
+  GOOD
+  FAIR
+  POOR
+
+  @@map("egg_laying_rate")
+}
+
+enum QueenStatus {
+  ACTIVE
+  MATING
+  LAYING
+  FAILING
+  DEAD
+  SOLD
+  LOST
+
+  @@map("queen_status")
+}
+
+enum NucleusQueenStatus {
+  VIRGIN
+  MATING
+  LAYING
+  FAILING
+  ABSENT
+
+  @@map("nucleus_queen_status")
+}
+
+enum NucleusPurpose {
+  QUEEN_MATING
+  QUEEN_STORAGE
+  HIVE_INCREASE
+  SALE
+  OTHER
+
+  @@map("nucleus_purpose")
+}
+
+enum NucleusStatus {
+  ACTIVE
+  WEAK
+  QUEENLESS
+  GRADUATED
+  MERGED
+  SOLD
+  LOST
+
+  @@map("nucleus_status")
+}
+
+enum FeedingLocation {
+  INTERNAL
+  EXTERNAL
+
+  @@map("feeding_location")
+}
+
+enum FeedingMethod {
+  TOP_FEEDER
+  FRAME_FEEDER
+  ENTRANCE_FEEDER
+  BULK_FEEDER
+  SPRAY
+  OTHER
+
+  @@map("feeding_method")
+}
+
+enum FeedingContentType {
+  SUGAR_SYRUP
+  PROTEIN
+  POLLEN_SUBSTITUTE
+  FONDANT
+  MEDICINAL
+  SUPPLEMENT
+  OTHER
+
+  @@map("feeding_content_type")
+}
+
+enum FeedingPurpose {
+  STIMULATION
+  MAINTENANCE
+  EMERGENCY
+  TREATMENT
+  WINTER_PREP
+  SPRING_BUILDUP
+
+  @@map("feeding_purpose")
+}
+
+enum HoneyQualityImpact {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+
+  @@map("honey_quality_impact")
+}
+
+enum FeedingUrgency {
+  IMMEDIATE
+  TODAY
+  THIS_WEEK
+  SOON
+
+  @@map("feeding_urgency")
+}
+
+enum RecommendationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COMPLETED
+  EXPIRED
+
+  @@map("recommendation_status")
+}
+
+enum FeedingFrequency {
+  DAILY
+  EVERY_2_DAYS
+  EVERY_3_DAYS
+  WEEKLY
+  CUSTOM
+
+  @@map("feeding_frequency")
+}
+
+enum DiseaseType {
+  BACTERIAL
+  VIRAL
+  FUNGAL
+  PARASITIC
+  PEST
+  GENETIC
+  NUTRITIONAL
+
+  @@map("disease_type")
+}
+
+enum DiseaseSeverity {
+  CATASTROPHIC
+  SEVERE
+  MODERATE
+  MILD
+
+  @@map("disease_severity")
+}
+
+enum Contagiousness {
+  EXTREMELY_HIGH
+  HIGH
+  MEDIUM
+  LOW
+  NONE
+
+  @@map("contagiousness")
+}
+
+enum DiseaseStatus {
+  ACTIVE
+  TREATING
+  RESOLVED
+  CATASTROPHIC
+
+  @@map("disease_status")
+}
+
+enum HarvestType {
+  HONEY
+  POLLEN
+  ROYAL_JELLY
+  PROPOLIS
+  WAX
+  BEE_VENOM
+
+  @@map("harvest_type")
+}
+
+enum HarvestUnit {
+  KG
+  GRAM
+  LITER
+
+  @@map("harvest_unit")
+}
+
+enum QualityGrade {
+  PREMIUM
+  GRADE_A
+  GRADE_B
+  GRADE_C
+  REJECT
+
+  @@map("quality_grade")
+}
+
+enum PollenCollectionMethod {
+  POLLEN_TRAP
+  FRAME_TRANSFER
+
+  @@map("pollen_collection_method")
+}
+
+enum SplitMethod {
+  STANDARD
+  WITH_NUCLEUS_QUEENS
+  WITH_PURCHASED_QUEENS
+  MIXED
+
+  @@map("split_method")
+}
+
+enum OperationStatus {
+  PLANNED
+  IN_PROGRESS
+  MONITORING
+  COMPLETED
+  FAILED
+
+  @@map("operation_status")
+}
+
+enum MergeMethod {
+  NEWSPAPER
+  DIRECT
+  GRADUAL
+  SPRAY
+
+  @@map("merge_method")
+}
+
+enum SwarmEventType {
+  SWARMED
+  CAPTURED
+  PREVENTED
+  OBSERVED
+
+  @@map("swarm_event_type")
+}
+
+enum SwarmSize {
+  SMALL
+  MEDIUM
+  LARGE
+  VERY_LARGE
+
+  @@map("swarm_size")
+}
+
+enum WeatherSource {
+  API
+  MANUAL
+  SENSOR
+
+  @@map("weather_source")
+}
+
+enum BeeFlightConditions {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  IMPOSSIBLE
+
+  @@map("bee_flight_conditions")
+}
+
+enum WeatherEventType {
+  DROUGHT
+  EXCESSIVE_RAIN
+  FROST
+  HEATWAVE
+  STORM
+  FAVORABLE_PERIOD
+
+  @@map("weather_event_type")
+}
+
+enum PlantType {
+  TREE
+  SHRUB
+  HERB
+  CROP
+  WILDFLOWER
+
+  @@map("plant_type")
+}
+
+enum CoverageUnit {
+  HECTARES
+  TREES
+  PATCHES
+  PERCENTAGE
+
+  @@map("coverage_unit")
+}
+
+enum PlantDensity {
+  VERY_DENSE
+  DENSE
+  SCATTERED
+  SPARSE
+  RARE
+
+  @@map("plant_density")
+}
+
+enum LocalPlantStatus {
+  ACTIVE
+  BLOOMING
+  ENDED
+  REMOVED
+
+  @@map("local_plant_status")
+}
+
+enum BeeActivityLevel {
+  VERY_HIGH
+  HIGH
+  MODERATE
+  LOW
+  VERY_LOW
+  NONE
+
+  @@map("bee_activity_level")
+}
+
+enum BloomStatus {
+  PEAK
+  HIGH
+  MODERATE
+  BEGINNING
+  ENDING
+  NOT_BLOOMING
+
+  @@map("bloom_status")
+}
+
+enum SyncAction {
+  CREATE
+  UPDATE
+  DELETE
+
+  @@map("sync_action")
+}
+
+enum QueueStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+
+  @@map("queue_status")
+}
+
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  DISMISSED
+  RESOLVED
+  EXPIRED
+
+  @@map("alert_status")
+}
+
+enum FeedbackType {
+  BUG
+  FEATURE_REQUEST
+  IMPROVEMENT
+  PRAISE
+  COMPLAINT
+  OTHER
+
+  @@map("feedback_type")
+}
+
+enum FeedbackStatus {
+  SUBMITTED
+  REVIEWING
+  PLANNED
+  IMPLEMENTED
+  REJECTED
+  DUPLICATE
+
+  @@map("feedback_status")
+}
+
+model Product {
+  id          String        @id @default(uuid()) @db.Uuid
+  name        String
+  category    String
+  description String?
+  price       Decimal       @db.Decimal(10, 2)
+  stock       Int           @default(0)
+  status      String        @default("ACTIVE")
+  imageUrl    String?       @map("image_url")
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+  ProductUnit ProductUnit[]
+
+  @@map("product")
+}
+
+// ============================================================================
+// E. NEW MODULES (Next-Gen Features)
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// 1. Hive Templates (From Active Project)
+// ----------------------------------------------------------------------------
+
+model HiveTemplate {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+
+  // Configuration
+  // Configuration
+  hiveTypeId   String   @map("hive_type_id") @db.Uuid
+  hiveType     HiveType @relation(fields: [hiveTypeId], references: [id])
+  stories      Int      @default(1)
+  framesPerBox Int      @default(10) @map("frames_per_box")
+  frameSize    String?  @map("frame_size")
+
+  // Defaults
+  defaultNotes String?  @map("default_notes")
+  defaultTags  String[] @map("default_tags")
+
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  createdBy String?      @map("created_by") @db.Uuid
+  user      UserProfile? @relation(fields: [createdBy], references: [id])
+
+  @@map("hive_template")
+}
+
+// ----------------------------------------------------------------------------
+// 2. AI Chat & Personalization (New)
+// ----------------------------------------------------------------------------
+
+enum ChatMode {
+  ADVISOR
+  DIAGNOSTIC
+  GENERAL
+  ANALYSIS
+}
+
+model AIChatSession {
+  id      String   @id @default(uuid()) @db.Uuid
+  userId  String   @map("user_id") @db.Uuid
+  title   String?
+  mode    ChatMode
+  context Json?    @db.JsonB // { "active_hive": "uuid", "current_problem": "varroa" }
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user     UserProfile     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AIChatMessage[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("ai_chat_session")
+}
+
+model AIChatMessage {
+  id        String @id @default(uuid()) @db.Uuid
+  sessionId String @map("session_id") @db.Uuid
+  role      String // USER, AI, SYSTEM
+  content   String
+
+  // RAG & Citations
+  sources Json? @db.JsonB // [ { "type": "COMMUNITY_STAT", "id": "stat-99" }, { "type": "SCIENCE_ARTICLE", "url": "..." } ]
+
+  // Feedback
+  feedback Int? // 1-5 rating
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  session AIChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt(sort: Asc)])
+  @@map("ai_chat_message")
+}
+
+model AIUserContext {
+  userId String @id @map("user_id") @db.Uuid
+
+  // Inferred Profile
+  experienceLevel String   @map("experience_level") // "BEGINNER", "EXPERT"
+  interests       String[]
+  lastFocus       String?  @map("last_focus")
+
+  // Preferences
+  learnedPreferences Json @map("learned_preferences") @db.JsonB
+
+  lastUpdated DateTime @updatedAt @map("last_updated") @db.Timestamptz
+
+  // Relations
+  user UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_user_context")
+}
+
+model AICommunityInsight {
+  id             String  @id @default(uuid()) @db.Uuid
+  topic          String
+  region         String?
+  finding        String
+  confidence     Decimal @db.Decimal(5, 2) // 95.50
+  basedOnSamples Int     @map("based_on_samples")
+
+  lastUpdated DateTime @updatedAt @map("last_updated") @db.Timestamptz
+
+  @@index([topic, region])
+  @@map("ai_community_insight")
+}
+
+// ----------------------------------------------------------------------------
+// 3. IoT & Telemetry (New)
+// ----------------------------------------------------------------------------
+
+enum DeviceType {
+  SMART_SCALE
+  TEMP_HUMIDITY
+  AUDIO_MONITOR
+  GPS_TRACKER
+  CAMERA
+  WEATHER_STATION
+}
+
+model HiveSensor {
+  id       String  @id @default(uuid()) @db.Uuid
+  hiveId   String? @map("hive_id") @db.Uuid
+  apiaryId String? @map("apiary_id") @db.Uuid
+
+  name            String
+  deviceType      DeviceType @map("device_type")
+  serialNumber    String     @unique @map("serial_number")
+  firmwareVersion String?    @map("firmware_version")
+
+  // Status
+  batteryLevel   Int?      @map("battery_level")
+  signalStrength Int?      @map("signal_strength")
+  lastSync       DateTime? @map("last_sync") @db.Timestamptz
+  isActive       Boolean   @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  hive     Hive?           @relation(fields: [hiveId], references: [id])
+  apiary   Apiary?         @relation(fields: [apiaryId], references: [id])
+  readings SensorReading[]
+
+  @@map("hive_sensor")
+}
+
+model SensorReading {
+  // Hypertable candidate (Time-series)
+  id       String @id @default(uuid()) @db.Uuid // Optional in pure time-series db
+  sensorId String @map("sensor_id") @db.Uuid
+
+  timestamp DateTime @map("timestamp") @db.Timestamptz
+
+  // Data
+  temperature Decimal? @db.Decimal(5, 2)
+  humidity    Decimal? @db.Decimal(5, 2)
+  weightKg    Decimal? @map("weight_kg") @db.Decimal(6, 3)
+  frequencyHz Decimal? @map("frequency_hz") @db.Decimal(8, 2) // Audio analysis
+
+  rawPayload Json? @map("raw_payload") @db.JsonB
+
+  // Relations
+  sensor HiveSensor @relation(fields: [sensorId], references: [id], onDelete: Cascade)
+
+  @@index([sensorId, timestamp(sort: Desc)])
+  @@map("sensor_reading")
+}
+
+// ----------------------------------------------------------------------------
+// 4. Advanced Supply Chain (Traceability)
+// ----------------------------------------------------------------------------
+
+model HoneyBatch {
+  id        String @id @default(uuid()) @db.Uuid
+  batchCode String @unique @map("batch_code") // GR-2025-001
+
+  // Origin
+  apiaryIds   String[] @map("apiary_ids") @db.Uuid // Denormalized for quick lookup
+  harvestDate DateTime @map("harvest_date") @db.Date
+
+  // Details
+  floralSource    String? @map("floral_source")
+  totalQuantityKg Decimal @map("total_quantity_kg") @db.Decimal(10, 2)
+
+  // Processing
+  processingStatus String @default("RAW") @map("processing_status")
+
+  // Traceability
+  qrCodeUrl      String? @map("qr_code_url")
+  blockchainHash String? @map("blockchain_hash")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  harvests     HoneyHarvest[] // Need to update HoneyHarvest to point here
+  labResults   LabTestResult[]
+  productUnits ProductUnit[]
+
+  @@map("honey_batch")
+}
+
+model LabTestResult {
+  id      String @id @default(uuid()) @db.Uuid
+  batchId String @map("batch_id") @db.Uuid
+
+  testType String   @map("test_type") // HMF, Sugar, Moisture
+  labName  String?  @map("lab_name")
+  testDate DateTime @map("test_date") @db.Date
+
+  value  Decimal @db.Decimal(10, 4)
+  unit   String
+  passed Boolean
+
+  certificateUrl String? @map("certificate_url")
+
+  // Relations
+  batch HoneyBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@map("lab_test_result")
+}
+
+model ProductUnit {
+  id        String @id @default(uuid()) @db.Uuid
+  batchId   String @map("batch_id") @db.Uuid
+  productId String @map("product_id") @db.Uuid // From Product table
+
+  serialCode String   @unique @map("serial_code")
+  packedDate DateTime @map("packed_date") @db.Date
+
+  sold   Boolean   @default(false)
+  soldAt DateTime? @map("sold_at") @db.Timestamptz
+
+  // Relations
+  batch   HoneyBatch @relation(fields: [batchId], references: [id])
+  product Product    @relation(fields: [productId], references: [id])
+
+  @@map("product_unit")
+}
+
+// ============================================================================
+// F. ADMIN & SAAS MODULES (Admin Panel Addons)
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// 1. Subscription & Billing
+// ----------------------------------------------------------------------------
+
+model BillingPlan {
+  id          String  @id @default(uuid()) @db.Uuid
+  code        String  @unique // FREE, PRO_MONTHLY, ENT_YEARLY
+  name        String
+  description String?
+
+  price    Decimal @db.Decimal(10, 2)
+  currency String  @default("USD")
+  interval String // MONTHLY, YEARLY
+
+  // Limits
+  maxApiaries Int  @default(1) @map("max_apiaries")
+  maxHives    Int  @default(10) @map("max_hives")
+  features    Json @default("{}") // { "ai_advisor": true, "offline_mode": false }
+
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  subscribers UserProfile[]
+
+  @@map("billing_plan")
+}
+
+model Invoice {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+
+  amount   Decimal @db.Decimal(10, 2)
+  currency String  @default("USD")
+  status   String // PAID, PENDING, FAILED, REFUNDED
+
+  billingDate DateTime  @default(now()) @map("billing_date") @db.Timestamptz
+  dueDate     DateTime  @map("due_date") @db.Timestamptz
+  paidAt      DateTime? @map("paid_at") @db.Timestamptz
+
+  invoiceUrl String? @map("invoice_url")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user UserProfile @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("invoice")
+}
+
+// ----------------------------------------------------------------------------
+// 2. AI Governance (Aggregated Stats)
+// ----------------------------------------------------------------------------
+
+model AITrainingStat {
+  id   String   @id @default(uuid()) @db.Uuid
+  date DateTime @unique @db.Date
+
+  totalInteractions Int @default(0) @map("total_interactions")
+
+  // Feedback Stats
+  positiveFeedbackCount Int @default(0) @map("positive_feedback_count")
+  negativeFeedbackCount Int @default(0) @map("negative_feedback_count")
+
+  // Topics (Aggregated JSON)
+  topicDistribution Json @default("{}") // { "disease": 200, "weather": 150 }
+
+  accuracyScore Decimal? @map("accuracy_score") @db.Decimal(5, 2)
+
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("ai_training_stat")
+}
+
+// ----------------------------------------------------------------------------
+// 3. System Infrastructure
+// ----------------------------------------------------------------------------
+
+model SystemLog {
+  id        String @id @default(uuid()) @db.Uuid
+  level     String // INFO, WARN, ERROR, CRITICAL
+  component String // API, DB, WORKER, AI
+  message   String
+
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([level])
+  @@index([createdAt(sort: Desc)])
+  @@map("system_log")
+}
+// ============================================================================
+// Inspection Settings (Auto-scheduling)
+// ============================================================================
+
+model InspectionSetting {
+  id          String   @id @default(uuid()) @db.Uuid
+  type        String   @unique // InspectionType enum value
+
+  // Names
+  nameAr String @map("name_ar")
+  nameEn String @map("name_en")
+
+  // Intervals (in days)
+  minInterval Int  @default(7) @map("min_interval")
+  maxInterval Int  @default(14) @map("max_interval")
+
+  // Status
+  isActive  Boolean @default(true) @map("is_active")
+  isDefault Boolean @default(false) @map("is_default")
+
+  // Description
+  description String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  schedules InspectionSchedule[]
+
+  @@index([type])
+  @@map("inspection_setting")
+}
+
+model InspectionSchedule {
+  id          String  @id @default(uuid()) @db.Uuid
+  settingId   String  @map("setting_id") @db.Uuid
+  hiveId      String  @map("hive_id") @db.Uuid
+  apiaryId    String  @map("apiary_id") @db.Uuid
+
+  // Scheduled Date
+  scheduledDate DateTime @map("scheduled_date") @db.Date
+
+  // Status
+  status ScheduleStatus @default(PENDING) @map("status")
+
+  // Completion
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz
+  inspectionId   String?   @map("inspection_id") @db.Uuid
+  skipped        Boolean   @default(false) @map("skipped")
+  skipReason     String?   @map("skip_reason")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  setting InspectionSetting @relation(fields: [settingId], references: [id], onDelete: Cascade)
+  hive    Hive              @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+  apiary  Apiary            @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  inspection Inspection?    @relation(fields: [inspectionId], references: [id])
+
+  @@index([hiveId, scheduledDate])
+  @@index([apiaryId, scheduledDate])
+  @@index([status])
+  @@map("inspection_schedule")
+}
+
+enum ScheduleStatus {
+  PENDING
+  COMPLETED
+  SKIPPED
+  OVERDUE
+
+  @@map("schedule_status")
+}
+// ============================================================================
+// Task Management
+// ============================================================================
+
+enum TaskType {
+  INSPECTION
+  FEEDING
+  TREATMENT
+  HARVEST
+  MAINTENANCE
+  MOVEMENT
+  REQUEENING
+  SPLITTING
+  MERGING
+  OTHER
+
+  @@map("task_type")
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  OVERDUE
+
+  @@map("task_status")
+}
+
+model ApiaryTask {
+  id          String     @id @default(uuid()) @db.Uuid
+  apiaryId    String     @map("apiary_id") @db.Uuid
+  hiveId      String?    @map("hive_id") @db.Uuid
+
+  // Task Details
+  title       String
+  description String?
+  taskType    TaskType   @map("task_type")
+
+  // Scheduling
+  dueDate     DateTime   @map("due_date") @db.Date
+  completedAt DateTime?  @map("completed_at") @db.Timestamptz
+
+  // Status
+  status      TaskStatus @default(PENDING)
+
+  // Priority
+  priority    Int        @default(0)
+
+  // Notes
+  notes       String?
+
+  // Assigned To
+  assignedTo  String?    @map("assigned_to") @db.Uuid
+
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  apiary      Apiary     @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  hive        Hive?      @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+  assignee    UserProfile? @relation(fields: [assignedTo], references: [id])
+
+  @@index([apiaryId, status])
+  @@index([hiveId])
+  @@index([dueDate])
+  @@map("apiary_task")
+}
+
+// ============================================================================
+// Financial Records
+// ============================================================================
+
+enum FinancialType {
+  REVENUE
+  EXPENSE
+
+  @@map("financial_type")
+}
+
+model FinancialRecord {
+  id       String        @id @default(uuid()) @db.Uuid
+  apiaryId String        @map("apiary_id") @db.Uuid
+
+  // Type
+  type     FinancialType
+
+  // Amount
+  amount   Decimal       @db.Decimal(12, 2)
+  currency String        @default("SAR")
+
+  // Category
+  category String        // honey_sales, equipment, feeding, treatment, etc.
+
+  // Description
+  description String?
+
+  // Date
+  recordDate DateTime    @map("record_date") @db.Date
+
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  apiary Apiary          @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+
+  @@index([apiaryId, recordDate])
+  @@index([type])
+  @@map("financial_record")
+}
+
+// ============================================================================
+// Apiary Operations Log
+// ============================================================================
+
+enum ApiaryOperationType {
+  INSPECTION
+  FEEDING
+  TREATMENT
+  HARVEST
+  SPLIT
+  MERGE
+  MOVE
+  REQUEEN
+  MAINTENANCE
+  OTHER
+
+  @@map("apiary_operation_type")
+}
+
+model ApiaryOperation {
+  id          String             @id @default(uuid()) @db.Uuid
+  apiaryId    String             @map("apiary_id") @db.Uuid
+  hiveId      String?            @map("hive_id") @db.Uuid
+
+  // Operation
+  operationType ApiaryOperationType @map("operation_type")
+  operationNumber Int               @default(autoincrement()) @map("operation_number")
+
+  // Details
+  description String?
+  data        Json?
+
+  // Result
+  result      String?
+  success     Boolean @default(true)
+
+  // User
+  performedBy String?  @map("performed_by") @db.Uuid
+  user        UserProfile? @relation(fields: [performedBy], references: [id])
+
+  // Timing
+  operationDate DateTime @map("operation_date") @db.Timestamptz
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  apiary      Apiary   @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  hive        Hive?    @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+
+  @@index([apiaryId, operationDate(sort: Desc)])
+  @@index([hiveId])
+  @@map("apiary_operation")
+}
+
+// ============================================================================
+// Apiary Metrics (Cached/Denormalized)
+// ============================================================================
+
+model ApiaryMetrics {
+  id          String   @id @default(uuid()) @db.Uuid
+  apiaryId    String   @unique @map("apiary_id") @db.Uuid
+
+  // Counts
+  totalHives     Int     @default(0) @map("total_hives")
+  activeHives    Int     @default(0) @map("active_hives")
+  queenlessHives Int     @default(0) @map("queenless_hives")
+
+  // Latest
+  lastInspectionDate DateTime? @map("last_inspection_date") @db.Timestamptz
+  lastHarvestDate    DateTime? @map("last_harvest_date") @db.Timestamptz
+
+  // Averages
+  avgHiveStrength   Decimal? @map("avg_hive_strength") @db.Decimal(5, 2)
+  avgHoneyYield     Decimal? @map("avg_honey_yield") @db.Decimal(10, 2)
+
+  // Disease Stats
+  diseaseIncidents Int @default(0) @map("disease_incidents")
+
+  // Seasonal
+  seasonType String? @map("season_type") // spring, summer, autumn, winter
+
+  calculatedAt DateTime @default(now()) @map("calculated_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  apiary Apiary @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+
+  @@map("apiary_metrics")
+}
+
+// ============================================================================
+// Analytics & Predictions
+// ============================================================================
+
+model OperationAnalysis {
+  id       String @id @default(uuid()) @db.Uuid
+  apiaryId String @map("apiary_id") @db.Uuid
+  hiveId   String @map("hive_id") @db.Uuid
+
+  // Analysis
+  analysisType      String @map("analysis_type")
+  predictionPayload Json?  @map("prediction_payload")
+  sourceOperationId String? @map("source_operation_id") @db.Uuid
+  confidenceScore   Float? @map("confidence_score")
+
+  // Resolution
+  isResolved Boolean @default(false) @map("is_resolved")
+
+  // Factors
+  factors Json?
+
+  // Result
+  actualDate   DateTime? @map("actual_date") @db.Date
+  accuracyDays Int?      @map("accuracy_days")
+
+  // Status
+  status String @default("PENDING")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  hive              Hive              @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+  predictionMatches PredictionMatch[]
+
+  @@index([apiaryId])
+  @@index([hiveId])
+  @@index([analysisType])
+  @@map("operation_analysis")
+}
+
+model PredictionMatch {
+  id           String @id @default(uuid()) @db.Uuid
+  analysisId   String @map("analysis_id") @db.Uuid
+  apiaryId     String @map("apiary_id") @db.Uuid
+  resolvingOperationId String @map("resolving_operation_id") @db.Uuid
+
+  // Accuracy
+  isAccurate    Boolean @map("is_accurate")
+  accuracyScore Decimal @map("accuracy_score") @db.Decimal(5, 2)
+
+  // Data
+  predictedData     Json? @map("predicted_data")
+  actualOutcomeData Json? @map("actual_outcome_data")
+
+  matchedAt DateTime @default(now()) @map("matched_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  analysis OperationAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+  @@index([apiaryId])
+  @@map("prediction_match")
+}
+
+// ============================================================================
+// Hive Condition (Enum - stored separately for query flexibility)
+// ============================================================================
+
+enum HiveCondition {
+  EXCELLENT
+  VERY_GOOD
+  GOOD
+  FAIR
+  WEAK
+  CRITICAL
+  UNKNOWN
+
+  @@map("hive_condition")
+}

@@ -1,0 +1,12 @@
+﻿http:
+  routers:
+    to-external:
+      rule: "Host(app.<!DOCTYPE html>)"
+      service: external
+      tls:
+        certResolver: myresolver
+  services:
+    external:
+      loadBalancer:
+        servers:
+          - url: "http://httpbin.org"

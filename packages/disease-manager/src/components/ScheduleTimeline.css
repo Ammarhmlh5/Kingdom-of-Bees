@@ -1,0 +1,392 @@
+/**
+ * Schedule Timeline Styles
+ * أنماط مكون الجدول الزمني
+ */
+
+.schedule-timeline {
+  padding: 1.5rem;
+}
+
+.timeline-title {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.timeline-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.timeline-item {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 4px solid #3498db;
+}
+
+.timeline-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.timeline-item.status-active {
+  border-left-color: #3498db;
+}
+
+.timeline-item.status-completed {
+  border-left-color: #27ae60;
+}
+
+.timeline-item.status-cancelled {
+  border-left-color: #95a5a6;
+  opacity: 0.7;
+}
+
+.timeline-item.status-paused {
+  border-left-color: #f39c12;
+}
+
+.schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.schedule-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.schedule-name {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.schedule-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.schedule-status.status-active {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.schedule-status.status-completed {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.schedule-status.status-cancelled {
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.schedule-status.status-paused {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.schedule-dates {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.date-label {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+}
+
+.date-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.schedule-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-label {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+}
+
+.detail-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.doses-container {
+  margin-top: 1rem;
+}
+
+.doses-title {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.doses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.dose-item {
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dose-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dose-item.dose-pending {
+  border-color: #3498db;
+}
+
+.dose-item.dose-completed {
+  border-color: #27ae60;
+  background: #e8f5e9;
+}
+
+.dose-item.dose-overdue {
+  border-color: #e74c3c;
+  background: #ffebee;
+}
+
+.dose-item.dose-cancelled {
+  border-color: #95a5a6;
+  opacity: 0.6;
+}
+
+.dose-number {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.25rem;
+}
+
+.dose-date {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+  margin-bottom: 0.25rem;
+}
+
+.dose-status {
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.2rem 0.5rem;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.dose-status.dose-pending {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.dose-status.dose-completed {
+  background: #c8e6c9;
+  color: #2e7d32;
+}
+
+.dose-status.dose-overdue {
+  background: #ffcdd2;
+  color: #c62828;
+}
+
+.dose-status.dose-cancelled {
+  background: #e0e0e0;
+  color: #616161;
+}
+
+.dose-completed-date {
+  font-size: 0.8rem;
+  color: #27ae60;
+  margin-top: 0.25rem;
+}
+
+.schedule-notes {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fff9e6;
+  border-radius: 4px;
+  border-left: 3px solid #f39c12;
+}
+
+.notes-label {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-right: 0.5rem;
+}
+
+.notes-value {
+  color: #34495e;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #7f8c8d;
+}
+
+.empty-state p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* RTL Support */
+[dir='rtl'] .timeline-item {
+  border-left: none;
+  border-right: 4px solid #3498db;
+}
+
+[dir='rtl'] .timeline-item.status-active {
+  border-right-color: #3498db;
+}
+
+[dir='rtl'] .timeline-item.status-completed {
+  border-right-color: #27ae60;
+}
+
+[dir='rtl'] .timeline-item.status-cancelled {
+  border-right-color: #95a5a6;
+}
+
+[dir='rtl'] .timeline-item.status-paused {
+  border-right-color: #f39c12;
+}
+
+[dir='rtl'] .schedule-notes {
+  border-left: none;
+  border-right: 3px solid #f39c12;
+}
+
+[dir='rtl'] .notes-label {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .schedule-timeline {
+    padding: 1rem;
+  }
+
+  .timeline-title {
+    font-size: 1.25rem;
+  }
+
+  .schedule-header {
+    flex-direction: column;
+  }
+
+  .schedule-details {
+    grid-template-columns: 1fr;
+  }
+
+  .doses-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .timeline-title {
+    color: #ecf0f1;
+  }
+
+  .timeline-item {
+    background: #2c3e50;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .schedule-name {
+    color: #ecf0f1;
+  }
+
+  .date-label {
+    color: #95a5a6;
+  }
+
+  .date-value {
+    color: #ecf0f1;
+  }
+
+  .schedule-details {
+    background: #34495e;
+  }
+
+  .detail-label {
+    color: #95a5a6;
+  }
+
+  .detail-value {
+    color: #ecf0f1;
+  }
+
+  .doses-title {
+    color: #ecf0f1;
+  }
+
+  .dose-item {
+    background: #34495e;
+  }
+
+  .dose-number {
+    color: #ecf0f1;
+  }
+
+  .dose-date {
+    color: #95a5a6;
+  }
+
+  .schedule-notes {
+    background: #34495e;
+  }
+
+  .notes-label,
+  .notes-value {
+    color: #ecf0f1;
+  }
+
+  .empty-state {
+    color: #95a5a6;
+  }
+}

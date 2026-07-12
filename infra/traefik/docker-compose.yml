@@ -1,0 +1,27 @@
+﻿version: '3.8'
+services:
+  traefik:
+    image: traefik:v2.10
+    restart: unless-stopped
+    env_file:
+      - .env
+    command:
+      - --api.dashboard=true
+      - --providers.docker=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.myresolver.acme.httpChallenge.entryPoint=web
+      - --certificatesresolvers.myresolver.acme.email=${EMAIL}
+      - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.myresolver.acme.caserver=${ACME_SERVER}
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+    environment:
+      - TZ=UTC
+
+volumes:
+  traefik_letsencrypt:

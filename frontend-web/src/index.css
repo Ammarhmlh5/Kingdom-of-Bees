@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+
+  --font-sans: "IBM Plex Sans Arabic", "Cairo", "Inter", sans-serif;
+}
+
+/* 
+  Nature Professional Theme 🌿🍯
+  Light Mode Default. Clean, Crisp, RTL-Friendly.
+*/
+:root {
+  --background: 0 0% 98%;
+  /* Soft White */
+  --foreground: 215 25% 27%;
+  /* Deep Slate (Readable) */
+
+  --card: 0 0% 100%;
+  /* Pure White */
+  --card-foreground: 215 25% 27%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 215 25% 27%;
+
+  /* Primary: Honey Gold */
+  --primary: 35 90% 50%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary: Forest Green */
+  --secondary: 150 90% 35%;
+  --secondary-foreground: 0 0% 100%;
+
+  /* Muted: Soft Gray */
+  --muted: 210 20% 96%;
+  --muted-foreground: 215 16% 47%;
+
+  /* Accent: Pollen Yellow / Highlight */
+  --accent: 45 100% 90%;
+  --accent-foreground: 35 90% 35%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 35 90% 50%;
+
+  --radius: 0.5rem;
+}
+
+body {
+  @apply bg-background text-foreground;
+  font-family: var(--font-sans);
+}

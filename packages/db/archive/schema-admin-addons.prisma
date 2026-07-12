@@ -1,0 +1,98 @@
+
+// ============================================================================
+// F. ADMIN & SAAS MODULES (Admin Panel Addons)
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// 1. Subscription & Billing
+// ----------------------------------------------------------------------------
+
+model BillingPlan {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique // FREE, PRO_MONTHLY, ENT_YEARLY
+  name        String
+  description String?
+  
+  price       Decimal  @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  interval    String   // MONTHLY, YEARLY
+  
+  // Limits
+  maxApiaries Int      @default(1) @map("max_apiaries")
+  maxHives    Int      @default(10) @map("max_hives")
+  features    Json     @default("{}") // { "ai_advisor": true, "offline_mode": false }
+  
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  subscribers UserProfile[]
+
+  @@map("billing_plan")
+}
+
+model Invoice {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  
+  amount      Decimal  @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  status      String   // PAID, PENDING, FAILED, REFUNDED
+  
+  billingDate DateTime @default(now()) @map("billing_date") @db.Timestamptz
+  dueDate     DateTime @map("due_date") @db.Timestamptz
+  paidAt      DateTime? @map("paid_at") @db.Timestamptz
+  
+  invoiceUrl  String?  @map("invoice_url")
+  
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user        UserProfile @relation(fields: [userId], references: [id])
+
+  @@map("invoice")
+  @@index([userId])
+}
+
+// ----------------------------------------------------------------------------
+// 2. AI Governance (Aggregated Stats)
+// ----------------------------------------------------------------------------
+
+model AITrainingStat {
+  id          String   @id @default(uuid()) @db.Uuid
+  date        DateTime @db.Date @unique
+  
+  totalInteractions Int @default(0) @map("total_interactions")
+  
+  // Feedback Stats
+  positiveFeedbackCount Int @default(0) @map("positive_feedback_count")
+  negativeFeedbackCount Int @default(0) @map("negative_feedback_count")
+  
+  // Topics (Aggregated JSON)
+  topicDistribution Json @default("{}") // { "disease": 200, "weather": 150 }
+  
+  accuracyScore Decimal? @map("accuracy_score") @db.Decimal(5, 2)
+
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("ai_training_stat")
+}
+
+// ----------------------------------------------------------------------------
+// 3. System Infrastructure
+// ----------------------------------------------------------------------------
+
+model SystemLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  level       String   // INFO, WARN, ERROR, CRITICAL
+  component   String   // API, DB, WORKER, AI
+  message     String
+  
+  metadata    Json?
+  
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("system_log")
+  @@index([level])
+  @@index([createdAt(sort: Desc)])
+}

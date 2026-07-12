@@ -1,0 +1,188 @@
+.inspection-history-list {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    width: 100%;
+}
+
+.inspection-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.inspection-history-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.add-inspection-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.add-inspection-btn:hover {
+    background: #2563eb;
+}
+
+.inspection-timeline-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.inspection-item {
+    display: flex;
+    gap: 1.5rem;
+    position: relative;
+    padding-bottom: 2rem;
+}
+
+.inspection-item:last-child {
+    padding-bottom: 0;
+}
+
+.inspection-item.clickable .inspection-content {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.inspection-item.clickable .inspection-content:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.inspection-date-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 60px;
+    text-align: center;
+}
+
+.date-day {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1f2937;
+    line-height: 1;
+}
+
+.date-month {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #6b7280;
+}
+
+.date-year {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.inspection-marker-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.inspection-marker {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px #e5e7eb;
+    z-index: 2;
+    margin-top: 4px;
+}
+
+.inspection-line {
+    position: absolute;
+    top: 20px;
+    bottom: -20px;
+    width: 2px;
+    background-color: #e5e7eb;
+    z-index: 1;
+}
+
+.inspection-item:last-child .inspection-line {
+    display: none;
+}
+
+.inspection-content {
+    flex: 1;
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+}
+
+.inspection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.condition-badge {
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    background: white;
+}
+
+.duration-text {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.inspection-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    background: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+}
+
+.inspection-summary {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #4b5563;
+    line-height: 1.5;
+}
+
+.no-records {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}
+
+.inspection-history-loading,
+.inspection-history-error {
+    padding: 2rem;
+    text-align: center;
+}
+
+.inspection-history-error {
+    color: #ef4444;
+}

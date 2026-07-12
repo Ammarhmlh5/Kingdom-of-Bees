@@ -1,0 +1,21 @@
+[
+  {
+    "name": "Full bundle",
+    "path": "dist/index.js",
+    "limit": "200 KB",
+    "gzip": true
+  },
+  {
+    "name": "ESM bundle",
+    "path": "dist/index.esm.js",
+    "limit": "200 KB",
+    "gzip": true
+  },
+  {
+    "name": "Core components only",
+    "path": "dist/index.js",
+    "import": "{ FrameEvaluator, useFrameEvaluator }",
+    "limit": "100 KB",
+    "gzip": true
+  }
+]

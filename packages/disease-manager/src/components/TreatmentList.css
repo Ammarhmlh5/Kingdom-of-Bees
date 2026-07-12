@@ -1,0 +1,255 @@
+/**
+ * Treatment List Component Styles
+ * أنماط مكون قائمة العلاجات
+ */
+
+.treatment-list {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Filters Section */
+.treatment-list__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.treatment-list__filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.treatment-list__filter-group label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #333;
+}
+
+.treatment-list__search,
+.treatment-list__select {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.treatment-list__search:focus,
+.treatment-list__select:focus {
+  outline: none;
+  border-color: #10b981;
+}
+
+/* Stats Section */
+.treatment-list__stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: #d1fae5;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Items List */
+.treatment-list__items {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.treatment-list__empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+  font-size: 1.125rem;
+}
+
+/* Treatment Item Card */
+.treatment-list__item {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.treatment-list__item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.treatment-list__item:focus {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
+.treatment-list__item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.treatment-list__item-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111;
+  flex: 1;
+}
+
+.treatment-list__item-effectiveness {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-inline-start: 0.5rem;
+}
+
+.treatment-list__item-effectiveness.effectiveness-1 {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.treatment-list__item-effectiveness.effectiveness-2 {
+  background-color: #fed7aa;
+  color: #9a3412;
+}
+
+.treatment-list__item-effectiveness.effectiveness-3 {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.treatment-list__item-effectiveness.effectiveness-4 {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.treatment-list__item-effectiveness.effectiveness-5 {
+  background-color: #a7f3d0;
+  color: #064e3b;
+}
+
+.treatment-list__item-description {
+  margin: 0 0 1rem 0;
+  color: #4b5563;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.treatment-list__item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.treatment-list__item-type {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-radius: 12px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.treatment-list__item-method {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background-color: #e0e7ff;
+  color: #3730a3;
+  border-radius: 12px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.treatment-list__item-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.treatment-list__item-badge--safe {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+/* Dosage, Cost, Safety Sections */
+.treatment-list__item-dosage,
+.treatment-list__item-cost,
+.treatment-list__item-safety {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.treatment-list__item-dosage strong,
+.treatment-list__item-cost strong,
+.treatment-list__item-safety strong {
+  color: #111;
+  font-weight: 600;
+}
+
+/* RTL Support */
+[dir="rtl"] .treatment-list__item-effectiveness {
+  margin-inline-start: 0;
+  margin-inline-end: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .treatment-list__filters {
+    flex-direction: column;
+  }
+
+  .treatment-list__filter-group {
+    min-width: 100%;
+  }
+
+  .treatment-list__items {
+    grid-template-columns: 1fr;
+  }
+
+  .treatment-list__stats {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .treatment-list {
+    padding: 0.5rem;
+  }
+
+  .treatment-list__item {
+    padding: 1rem;
+  }
+
+  .treatment-list__item-title {
+    font-size: 1.125rem;
+  }
+}

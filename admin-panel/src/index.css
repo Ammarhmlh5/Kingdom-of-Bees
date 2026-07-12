@@ -1,0 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  /* Admin panel specific colors */
+  --color-admin-50: #f0f4ff;
+  --color-admin-100: #e0e9ff;
+  --color-admin-500: #4f6ef7;
+  --color-admin-600: #3b5bdb;
+  --color-admin-700: #2f4ac7;
+  --color-admin-900: #1a2a6c;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+
+  --font-sans: "Cairo", sans-serif;
+  --font-display: "Cairo", sans-serif;
+}
+
+/* 
+  Modern Private / Kingdom of Bees v2 Theme
+  Light Purple Mode (User Requested)
+*/
+:root {
+  --background: hsl(270 45% 92%);
+  --foreground: hsl(222 47% 11%);
+
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(222 47% 11%);
+
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(222 47% 11%);
+
+  --primary: hsl(35 90% 50%);
+  --primary-foreground: hsl(222 47% 11%);
+
+  --secondary: hsl(270 30% 90%);
+  --secondary-foreground: hsl(222 47% 11%);
+
+  --muted: hsl(270 20% 90%);
+  --muted-foreground: hsl(270 10% 40%);
+
+  --accent: hsl(262 83% 58%);
+  --accent-foreground: hsl(210 40% 98%);
+
+  --destructive: hsl(0 63% 31%);
+  --destructive-foreground: hsl(210 40% 98%);
+
+  --border: hsl(270 20% 85%);
+  --input: hsl(270 20% 85%);
+  --ring: hsl(262 83% 58%);
+
+  --radius: 0.75rem;
+}
+
+body {
+  @apply bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary;
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.15) 0%, transparent 60%),
+    radial-gradient(circle at 100% 0%, rgba(255, 165, 0, 0.1) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  @apply bg-card/60 backdrop-blur-xl border border-white/10 shadow-2xl;
+}
+
+.glass-card {
+  @apply bg-white/5 backdrop-blur-md border border-white/5 shadow-lg hover:bg-white/10 transition-all duration-300;
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+}

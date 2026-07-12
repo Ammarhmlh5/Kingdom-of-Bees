@@ -1,0 +1,328 @@
+// ============================================================================
+// D. INSPECTIONS (4 models)
+// This file will be merged into the main schema.prisma
+// ============================================================================
+
+model Inspection {
+  id        String @id @default(uuid()) @db.Uuid
+  hiveId    String @map("hive_id") @db.Uuid
+  apiaryId  String @map("apiary_id") @db.Uuid
+
+  // Dates
+  inspectionDate  DateTime @map("inspection_date") @db.Timestamptz
+  durationMinutes Int?     @map("duration_minutes")
+
+  // Type
+  inspectionType InspectionType @map("inspection_type")
+
+  // Weather
+  weatherConditions  String?  @map("weather_conditions")
+  temperatureCelsius Decimal? @map("temperature_celsius") @db.Decimal(5, 2)
+
+  // Overall Assessment
+  overallAssessment OverallAssessment @map("overall_assessment")
+  overallScore      Int?              @map("overall_score")
+
+  // Strength
+  strengthBefore Int? @map("strength_before")
+  strengthAfter  Int? @map("strength_after")
+
+  // Queen
+  queenSeen    Boolean?      @map("queen_seen")
+  queenQuality QueenQuality? @map("queen_quality")
+  eggsPresent  Boolean?      @map("eggs_present")
+  eggsPattern  EggPattern?   @map("eggs_pattern")
+
+  // Brood
+  broodPresent         Boolean?     @map("brood_present")
+  broodPattern         BroodPattern? @map("brood_pattern")
+  broodFramesCount     Int?         @map("brood_frames_count")
+  cappedBroodFrames    Int?         @map("capped_brood_frames")
+
+  // Resources
+  honeyFramesCount  Int?     @map("honey_frames_count")
+  pollenFramesCount Int?     @map("pollen_frames_count")
+  estimatedHoneyKg  Decimal? @map("estimated_honey_kg") @db.Decimal(10, 2)
+
+  // Population
+  populationEstimate PopulationEstimate? @map("population_estimate")
+  framesCovered      Int?                @map("frames_covered")
+
+  // Temperament
+  temperament Temperament?
+
+  // Diseases & Pests
+  diseasesDetected Boolean @default(false) @map("diseases_detected")
+  pestsDetected    Boolean @default(false) @map("pests_detected")
+
+  // Swarm Signs
+  swarmCellsPresent Boolean   @default(false) @map("swarm_cells_present")
+  swarmCellsCount   Int       @default(0) @map("swarm_cells_count")
+  swarmRisk         SwarmRisk? @map("swarm_risk")
+
+  // Notes
+  notes           String?
+  recommendations String[]
+
+  // Media
+  images String[]
+  videos String[]
+
+  // Tracking
+  inspectedBy String?  @map("inspected_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  hive        Hive                    @relation(fields: [hiveId], references: [id], onDelete: Cascade)
+  apiary      Apiary                  @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
+  inspector   UserProfile?            @relation(fields: [inspectedBy], references: [id])
+  findings    InspectionFinding[]
+  actions     InspectionAction[]
+  frameDetails InspectionFrameDetail[]
+
+  @@map("inspection")
+  @@index([hiveId, inspectionDate(sort: Desc)])
+  @@index([apiaryId, inspectionDate(sort: Desc)])
+  @@index([diseasesDetected])
+}
+
+model InspectionFinding {
+  id           String @id @default(uuid()) @db.Uuid
+  inspectionId String @map("inspection_id") @db.Uuid
+
+  // Finding
+  findingType FindingType @map("finding_type")
+  severity    Severity
+
+  title       String
+  description String?
+
+  // Data
+  data Json?
+
+  // Recommended Action
+  recommendedAction String?  @map("recommended_action")
+  actionPriority    ActionPriority? @map("action_priority")
+  actionDeadline    DateTime? @map("action_deadline") @db.Date
+
+  // Media
+  images String[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+
+  @@map("inspection_finding")
+  @@index([inspectionId])
+}
+
+model InspectionAction {
+  id           String @id @default(uuid()) @db.Uuid
+  inspectionId String @map("inspection_id") @db.Uuid
+
+  // Action
+  actionType  ActionType @map("action_type")
+  description String
+
+  // Details
+  details Json?
+
+  // Outcome
+  outcome String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+
+  @@map("inspection_action")
+  @@index([inspectionId])
+}
+
+model InspectionFrameDetail {
+  id           String @id @default(uuid()) @db.Uuid
+  inspectionId String @map("inspection_id") @db.Uuid
+  frameId      String @map("frame_id") @db.Uuid
+
+  // State at inspection
+  position Int
+
+  broodPercentage       Int?       @map("brood_percentage")
+  broodType             BroodType? @map("brood_type")
+  broodAge              BroodAge?  @map("brood_age")
+
+  honeyPercentage       Int? @map("honey_percentage")
+  honeyCappedPercentage Int? @map("honey_capped_percentage")
+
+  pollenPercentage Int?     @map("pollen_percentage")
+  pollenColors     String[] @map("pollen_colors")
+
+  // Notes
+  condition String?
+  notes     String?
+
+  // Media
+  imageUrl String? @map("image_url")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  frame      HiveFrame  @relation(fields: [frameId], references: [id], onDelete: Cascade)
+
+  @@map("inspection_frame_detail")
+  @@index([inspectionId])
+}
+
+// ENUMS for Inspections
+
+enum InspectionType {
+  ROUTINE
+  DETAILED
+  QUICK_CHECK
+  DISEASE_CHECK
+  QUEEN_CHECK
+  HARVEST
+  FEEDING
+  TREATMENT
+  OTHER
+
+  @@map("inspection_type")
+}
+
+enum OverallAssessment {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  CRITICAL
+
+  @@map("overall_assessment")
+}
+
+enum QueenQuality {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  ABSENT
+
+  @@map("queen_quality")
+}
+
+enum EggPattern {
+  EXCELLENT
+  GOOD
+  SPOTTY
+  POOR
+  NONE
+
+  @@map("egg_pattern")
+}
+
+enum BroodPattern {
+  EXCELLENT
+  GOOD
+  SPOTTY
+  POOR
+  NONE
+
+  @@map("brood_pattern")
+}
+
+enum PopulationEstimate {
+  VERY_STRONG
+  STRONG
+  MEDIUM
+  WEAK
+  VERY_WEAK
+
+  @@map("population_estimate")
+}
+
+enum Temperament {
+  VERY_GENTLE
+  GENTLE
+  NORMAL
+  DEFENSIVE
+  AGGRESSIVE
+
+  @@map("temperament")
+}
+
+enum SwarmRisk {
+  IMMINENT
+  HIGH
+  MODERATE
+  LOW
+  NONE
+
+  @@map("swarm_risk")
+}
+
+enum FindingType {
+  DISEASE
+  PEST
+  QUEEN_ISSUE
+  RESOURCE_SHORTAGE
+  CONGESTION
+  WEAK_POPULATION
+  AGGRESSIVE_BEHAVIOR
+  EXCELLENT_CONDITION
+  OTHER
+
+  @@map("finding_type")
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+
+  @@map("severity")
+}
+
+enum ActionPriority {
+  IMMEDIATE
+  URGENT
+  SOON
+  ROUTINE
+
+  @@map("action_priority")
+}
+
+enum ActionType {
+  ADDED_FRAMES
+  REMOVED_FRAMES
+  ADDED_SUPER
+  REMOVED_SUPER
+  FED
+  TREATED
+  ADDED_QUEEN
+  REMOVED_QUEEN
+  HARVESTED
+  MOVED_FRAMES
+  SPLIT
+  MERGED
+  DESTROYED_QUEEN_CELLS
+  ADDED_FOUNDATION
+  COMPRESSED
+  OTHER
+
+  @@map("action_type")
+}
+
+enum BroodAge {
+  EGGS
+  YOUNG_LARVAE
+  OLD_LARVAE
+  CAPPED
+  MIXED
+
+  @@map("brood_age")
+}
+

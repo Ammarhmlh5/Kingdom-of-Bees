@@ -1,0 +1,33 @@
+2025-12-16 23:42:50.049 +03 [1064] LOG:  starting PostgreSQL 16.3, compiled by Visual C++ build 1938, 64-bit
+2025-12-16 23:42:50.054 +03 [1064] LOG:  listening on IPv4 address "127.0.0.1", port 55432
+2025-12-16 23:42:50.092 +03 [10520] LOG:  database system was shut down at 2025-12-16 23:42:29 +03
+2025-12-16 23:42:50.120 +03 [1064] LOG:  database system is ready to accept connections
+2025-12-16 23:43:43.881 +03 [5204] FATAL:  password authentication failed for user "postgres"
+2025-12-16 23:43:43.881 +03 [5204] DETAIL:  Password does not match for user "postgres".
+	Connection matched file "D:/Kingdom-of-Bees/infra/postgres/local_data/pg_hba.conf" line 115: "host    all             all             127.0.0.1/32            password"
+2025-12-16 23:43:43.931 +03 [11568] FATAL:  password authentication failed for user "kobold"
+2025-12-16 23:43:43.931 +03 [11568] DETAIL:  Role "kobold" does not exist.
+	Connection matched file "D:/Kingdom-of-Bees/infra/postgres/local_data/pg_hba.conf" line 115: "host    all             all             127.0.0.1/32            password"
+2025-12-16 23:43:44.671 +03 [9352] FATAL:  password authentication failed for user "kobold"
+2025-12-16 23:43:44.671 +03 [9352] DETAIL:  Role "kobold" does not exist.
+	Connection matched file "D:/Kingdom-of-Bees/infra/postgres/local_data/pg_hba.conf" line 115: "host    all             all             127.0.0.1/32            password"
+2025-12-16 23:44:10.925 +03 [7796] ERROR:  CREATE DATABASE cannot run inside a transaction block
+2025-12-16 23:44:10.925 +03 [7796] STATEMENT:  CREATE USER kobold WITH PASSWORD 'koboldpass'; CREATE DATABASE kobold OWNER kobold;
+2025-12-16 23:44:10.994 +03 [11668] FATAL:  password authentication failed for user "kobold"
+2025-12-16 23:44:10.994 +03 [11668] DETAIL:  Role "kobold" does not exist.
+	Connection matched file "D:/Kingdom-of-Bees/infra/postgres/local_data/pg_hba.conf" line 115: "host    all             all             127.0.0.1/32            password"
+2025-12-16 23:44:11.736 +03 [11588] FATAL:  password authentication failed for user "kobold"
+2025-12-16 23:44:11.736 +03 [11588] DETAIL:  Role "kobold" does not exist.
+	Connection matched file "D:/Kingdom-of-Bees/infra/postgres/local_data/pg_hba.conf" line 115: "host    all             all             127.0.0.1/32            password"
+2025-12-16 23:44:33.805 +03 [6728] ERROR:  role "kobold" does not exist
+2025-12-16 23:44:33.805 +03 [6728] STATEMENT:  ALTER ROLE kobold WITH PASSWORD 'koboldpass';
+2025-12-16 23:47:50.084 +03 [8460] LOG:  checkpoint starting: time
+2025-12-16 23:49:38.078 +03 [8460] LOG:  checkpoint complete: wrote 1017 buffers (6.2%); 0 WAL file(s) added, 0 removed, 0 recycled; write=107.028 s, sync=0.947 s, total=107.994 s; sync files=314, longest=0.055 s, average=0.004 s; distance=4854 kB, estimate=4854 kB; lsn=0/1A270A0, redo lsn=0/1A27068
+2025-12-17 00:07:27.500 +03 [1064] LOG:  received fast shutdown request
+2025-12-17 00:07:27.509 +03 [1064] LOG:  aborting any active transactions
+2025-12-17 00:07:27.518 +03 [11208] ERROR:  canceling statement due to user request
+2025-12-17 00:07:27.540 +03 [1064] LOG:  background worker "logical replication launcher" (PID 11208) exited with exit code 1
+2025-12-17 00:07:27.540 +03 [8460] LOG:  shutting down
+2025-12-17 00:07:27.545 +03 [8460] LOG:  checkpoint starting: shutdown immediate
+2025-12-17 00:07:27.566 +03 [8460] LOG:  checkpoint complete: wrote 0 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.027 s; sync files=0, longest=0.000 s, average=0.000 s; distance=0 kB, estimate=4369 kB; lsn=0/1A27150, redo lsn=0/1A27150
+2025-12-17 00:07:27.594 +03 [1064] LOG:  database system is shut down

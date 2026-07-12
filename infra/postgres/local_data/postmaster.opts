@@ -1,0 +1,1 @@
+C:/Program Files/PostgreSQL/16/bin/postgres.exe "-D" "D:/Kingdom-of-Bees/infra/postgres/local_data" "-p" "55432" "-h" "127.0.0.1"

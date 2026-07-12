@@ -1,0 +1,22 @@
+node_modules
+
+# Environment variables
+.env
+.env.*
+
+# Temporary files and caches
+.DS_Store
+Thumbs.db
+*.log
+tmp/
+dist/
+build/
+
+# Large/Binary files
+*.tar.gz
+*.zip
+*.rar
+
+# IDE files
+/.vscode/
+/.idea/

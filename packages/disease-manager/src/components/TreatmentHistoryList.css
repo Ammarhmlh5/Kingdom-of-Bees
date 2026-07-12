@@ -1,0 +1,129 @@
+.treatment-history-list {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    width: 100%;
+}
+
+.treatment-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.treatment-history-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.search-input {
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    width: 200px;
+}
+
+.treatment-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.treatment-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 1rem;
+    background: #f9fafb;
+    transition: all 0.2s;
+}
+
+.treatment-card.clickable {
+    cursor: pointer;
+}
+
+.treatment-card.clickable:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}
+
+.treatment-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.5rem;
+}
+
+.treatment-name {
+    font-weight: 600;
+    color: #111827;
+    font-size: 1rem;
+}
+
+.treatment-date {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.treatment-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+}
+
+.info-label {
+    color: #6b7280;
+}
+
+.info-value {
+    color: #374151;
+    font-weight: 500;
+}
+
+.cost-value {
+    color: #059669;
+}
+
+.treatment-notes {
+    font-size: 0.875rem;
+    color: #4b5563;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 4px;
+    font-style: italic;
+    border-left: 3px solid #e5e7eb;
+}
+
+[dir="rtl"] .treatment-notes {
+    border-left: none;
+    border-right: 3px solid #e5e7eb;
+}
+
+.no-records {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}
+
+.treatment-history-loading,
+.treatment-history-error {
+    padding: 2rem;
+    text-align: center;
+}
+
+.treatment-history-error {
+    color: #ef4444;
+}
