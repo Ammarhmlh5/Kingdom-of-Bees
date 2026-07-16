@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { AlertService } from '../services/alert.service';
 import type { AuthUser, AuthenticatedRequest } from '../types/auth.types';
 import { ApiResponse } from '../utils/response';
+import { updateDashboardStats } from '../lib/stats';
+import { logger } from '../utils/logger';
 
 interface AlertQueryFilters {
   status?: string;
@@ -71,6 +73,7 @@ export class AlertController {
         userId: data.userId || user.id,
       });
 
+      updateDashboardStats(user.id).catch((err) => logger.error('Dashboard stats update failed:', err));
       ApiResponse.created(res, alert, 'تم إنشاء التنبيه بنجاح');
     } catch (error) {
       ApiResponse.error(res, 'فشل في إنشاء التنبيه');
@@ -83,6 +86,7 @@ export class AlertController {
       const { id } = req.params;
 
       const result = await alertService.updateAlertStatus(id, 'ACKNOWLEDGED', user.id);
+      updateDashboardStats(user.id).catch((err) => logger.error('Dashboard stats update failed:', err));
       ApiResponse.success(res, result, 'تم تأكيد استلام التنبيه');
     } catch (error) {
       ApiResponse.error(res, 'فشل في تأكيد التنبيه');
@@ -91,8 +95,10 @@ export class AlertController {
 
   async dismiss(req: Request, res: Response) {
     try {
+      const user = (req as AuthenticatedRequest).user as AuthUser;
       const { id } = req.params;
       const result = await alertService.updateAlertStatus(id, 'DISMISSED');
+      updateDashboardStats(user.id).catch((err) => logger.error('Dashboard stats update failed:', err));
       ApiResponse.success(res, result, 'تم تجاهل التنبيه');
     } catch (error) {
       ApiResponse.error(res, 'فشل في تجاهل التنبيه');

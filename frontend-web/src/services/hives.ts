@@ -29,6 +29,7 @@ export interface Hive {
     queen?: any;
     queenId?: string;
     installationDate?: string;
+    apiary?: { id: string; name: string };
 }
 
 export interface CreateHiveData {
@@ -105,12 +106,6 @@ export interface SplitHiveData {
     strategy: 'EVEN' | 'NUC';
     newHiveNumber: string;
     queenType: string;
-}
-
-export interface AddSuperData {
-    type: string;
-    frames: string;
-    hasExcluder: boolean;
 }
 
 export interface MergeHivesData {

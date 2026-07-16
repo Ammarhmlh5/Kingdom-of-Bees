@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Sprout, Plus, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useHarvestHistory, useRecordHarvest } from '@/hooks/api';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useHives } from '@/hooks/api';
 
 const HARVEST_TYPES = [

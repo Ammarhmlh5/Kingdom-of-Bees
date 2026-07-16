@@ -56,7 +56,7 @@ export default function Sidebar() {
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="font-bold text-sm text-gray-900 truncate">{user.fullName || user.email}</p>
-                            <p className="text-xs text-amber-600">{user.userType === 'ADMIN' ? 'مشرف' : 'نحال'}</p>
+                            <p className="text-xs text-amber-600">{user.role === 'ADMIN' ? 'مشرف' : 'نحال'}</p>
                         </div>
                     </div>
                 </div>

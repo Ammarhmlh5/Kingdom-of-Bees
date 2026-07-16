@@ -4,7 +4,7 @@ import { Crown, Plus, X, AlertCircle, ChevronDown, ChevronUp } from 'lucide-reac
 import { toast } from 'sonner';
 import { useQueens, useCreateQueen, useDeleteQueen } from '@/hooks/api/useQueens';
 import { useHives } from '@/hooks/api';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Queen } from '@/services/queens';
 
 const QUEEN_SOURCES = [

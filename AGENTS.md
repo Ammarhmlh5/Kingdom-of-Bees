@@ -15,8 +15,10 @@ cd frontend-web && npm run test  # Run tests (Vitest)
 # Admin Panel
 cd admin-panel && npm run dev    # Start Vite dev server (port 5174)
 
-# Mobile App
-cd mobile-app && npm run start   # Start Expo
+# Mobile App (React + Vite + Tailwind)
+cd mobile-app && npm run dev      # Start Vite dev server (port 5174)
+cd mobile-app && npm run build    # Build for production
+cd mobile-app && npx tsc --noEmit # Type check
 ```
 
 ## Code Conventions

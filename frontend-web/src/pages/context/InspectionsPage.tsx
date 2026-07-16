@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { useInspections, useCreateInspection } from '@/hooks/api';
 import { useHives } from '@/hooks/api';
 import { useInspectionSettings, useValidateInspectionDate } from '@/hooks/api/useInspectionSettings';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const INSPECTION_TYPES = [
     { value: 'ROUTINE', label: 'روتيني' },
@@ -89,12 +89,14 @@ function AddInspectionModal({ apiaryId, onClose }: { apiaryId: string; onClose: 
         try {
             await createInspection.mutateAsync({
                 apiaryId,
-                hiveId: form.hiveId,
-                inspectionDate: form.inspectionDate,
-                inspectionType: form.inspectionType as any,
-                queenSeen: form.queenSeen,
-                overallAssessment: form.overallAssessment as any,
-                notes: form.notes || undefined,
+                data: {
+                    hiveId: form.hiveId,
+                    inspectionDate: form.inspectionDate,
+                    inspectionType: form.inspectionType as any,
+                    queenSeen: form.queenSeen,
+                    overallAssessment: form.overallAssessment as any,
+                    notes: form.notes || undefined,
+                },
             });
             toast.success('تم تسجيل الفحص بنجاح');
             onClose();

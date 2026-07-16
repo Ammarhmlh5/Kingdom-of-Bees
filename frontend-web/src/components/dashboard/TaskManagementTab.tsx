@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TaskList } from './TaskList';
 import { CreateTaskModal } from './CreateTaskModal';
-import { Task } from './TaskCard';
+import { EditTaskModal } from './EditTaskModal';
 import { TaskSortOptions } from './TaskSortDialog';
 import { 
     getTasks, 
@@ -10,7 +10,9 @@ import {
     completeTask, 
     deleteTask,
     TaskFilters,
-    CreateTaskData
+    CreateTaskData,
+    UpdateTaskData,
+    ApiaryTask
 } from '@/services/apiaryTasks';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
@@ -21,10 +23,12 @@ interface TaskManagementTabProps {
 }
 
 export function TaskManagementTab({ apiaryId, hives = [] }: TaskManagementTabProps) {
-    const [tasks, setTasks] = useState<Task[]>([]);
+    const [tasks, setTasks] = useState<ApiaryTask[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingTask, setEditingTask] = useState<ApiaryTask | null>(null);
     const [filters, setFilters] = useState<TaskFilters>({});
     const [sortOptions, setSortOptions] = useState<TaskSortOptions>({
         field: 'priority',
@@ -68,7 +72,7 @@ export function TaskManagementTab({ apiaryId, hives = [] }: TaskManagementTabPro
     // Handle complete task
     const handleCompleteTask = async (taskId: string) => {
         try {
-            await completeTask(taskId);
+            await completeTask(apiaryId, taskId);
             fetchTasks(); // Refresh the list
         } catch (err) {
             console.error('Error completing task:', err);
@@ -77,11 +81,22 @@ export function TaskManagementTab({ apiaryId, hives = [] }: TaskManagementTabPro
     };
 
     // Handle edit task
-    const handleEditTask = async (task: Task) => {
-        // For now, we'll just log it
-        // In a full implementation, you'd open an edit modal
-        console.log('Edit task:', task);
-        // TODO: Implement edit modal
+    const handleEditTask = async (task: ApiaryTask) => {
+        setEditingTask(task);
+        setShowEditModal(true);
+    };
+
+    // Handle update task
+    const handleUpdateTask = async (taskId: string, data: UpdateTaskData) => {
+        try {
+            await updateTask(apiaryId, taskId, data);
+            setShowEditModal(false);
+            setEditingTask(null);
+            fetchTasks(); // Refresh the list
+        } catch (err) {
+            console.error('Error updating task:', err);
+            throw err; // Let the modal handle the error
+        }
     };
 
     // Handle delete task
@@ -91,7 +106,7 @@ export function TaskManagementTab({ apiaryId, hives = [] }: TaskManagementTabPro
         }
 
         try {
-            await deleteTask(taskId);
+            await deleteTask(apiaryId, taskId);
             fetchTasks(); // Refresh the list
         } catch (err) {
             console.error('Error deleting task:', err);
@@ -147,6 +162,15 @@ export function TaskManagementTab({ apiaryId, hives = [] }: TaskManagementTabPro
                 isOpen={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
                 onSubmit={handleCreateTask}
+                hives={hives}
+            />
+
+            {/* Edit Task Modal */}
+            <EditTaskModal
+                isOpen={showEditModal}
+                onClose={() => { setShowEditModal(false); setEditingTask(null); }}
+                onSubmit={handleUpdateTask}
+                task={editingTask}
                 hives={hives}
             />
         </div>

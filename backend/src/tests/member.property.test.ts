@@ -123,7 +123,8 @@ describe('Property 6: getMembers response contains required fields for every mem
 
           if (res.json.mock.calls.length === 0) return false;
 
-          const result = res.json.mock.calls[0][0];
+          const response = res.json.mock.calls[0][0];
+          const result = response.data || response;
           if (!Array.isArray(result)) return false;
 
           // Every member must have all required fields

@@ -57,11 +57,11 @@ const feedingRecordArb: fc.Arbitrary<FeedingRecord> = fc.record({
     id: fc.uuid(),
     feedingLocation: feedingLocationArb,
     contentType: contentTypeArb,
-    quantityKg: fc.float({ min: 0.01, max: 1000, noNaN: true }),
+    quantityKg: fc.float({ min: Math.fround(0.01), max: Math.fround(1000), noNaN: true }),
     feedingDate: fc.date({
         min: new Date('2023-01-01'),
         max: new Date('2026-12-31'),
-    }).map(d => d.toISOString()),
+    }).filter(d => !isNaN(d.getTime())).map(d => d.toISOString()),
     hiveId: fc.option(fc.uuid(), { nil: undefined }),
 });
 

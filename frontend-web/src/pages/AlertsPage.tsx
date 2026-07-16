@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import AlertsList from '@/components/alerts/AlertsList'
 import { AlertSettingsTab } from '@/components/alerts/AlertSettingsTab'
 import { AlertTypeConfigTab } from '@/components/alerts/AlertTypeConfigTab'
 import { CustomAlertsTab } from '@/components/alerts/CustomAlertsTab'
+import { getAlerts } from '@/services/alerts'
 import type { Alert, AlertPriority, AlertType } from '@/types/alerts'
 import { ALERT_TYPE_LABELS, PRIORITY_LABELS } from '@/types/alerts'
 import {
@@ -18,100 +19,54 @@ import {
   Info
 } from 'lucide-react'
 
-const mockAlerts: Alert[] = [
-  {
-    id: '1', type: 'SWARM_RISK', priority: 'HIGH',
-    title: 'خطر تطريد عالي في خلية #5',
-    message: 'الخلية معرضة لخطر تطريد عالي. يُنصح بإضافة طابق علوي أو تقسيم الخلية فوراً.',
-    hiveId: '1', hiveName: 'خلية #5', apiaryName: 'منحل الربيع',
-    createdAt: new Date().toISOString(),
-    actionUrl: '/hives/1', actionLabel: 'عرض الخلية'
-  },
-  {
-    id: '2', type: 'FEEDING_NEEDED', priority: 'HIGH',
-    title: 'تغذية طارئة مطلوبة',
-    message: 'الخلية #3 تحتاج تغذية سكرية فورية. الاحتياطيات منخفضة جداً.',
-    hiveId: '2', hiveName: 'خلية #3', apiaryName: 'منحل الربيع',
-    createdAt: new Date(Date.now() - 3600000).toISOString(),
-    actionUrl: '/hives/2', actionLabel: 'تغذية الآن'
-  },
-  {
-    id: '3', type: 'LOW_HONEY', priority: 'MEDIUM',
-    title: 'انخفاض مستوى العسل',
-    message: 'متوسط العسل في الخلية #7 أقل من 20%. قد تحتاج لتغذية خلال الأيام القادمة.',
-    hiveId: '3', hiveName: 'خلية #7', apiaryName: 'منحل الصيف',
-    createdAt: new Date(Date.now() - 7200000).toISOString(),
-    actionUrl: '/hives/3', actionLabel: 'عرض الخلية'
-  },
-  {
-    id: '4', type: 'INSPECTION_DUE', priority: 'LOW',
-    title: 'فحص دوري مطلوب',
-    message: 'الخلية #12 لم يتم فحصها منذ 14 يوم. يُنصح بإجراء فحص دوري.',
-    hiveId: '4', hiveName: 'خلية #12', apiaryName: 'منحل الخريف',
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    actionUrl: '/hives/4/inspect', actionLabel: 'فحص الآن'
-  },
-  {
-    id: '5', type: 'QUEEN_ISSUE', priority: 'HIGH',
-    title: 'مشكلة في الملكة - خلية #8',
-    message: 'الملكة في الخلية #8 لم تعد تنتج بيضاً بشكل منتظم. يُنصح باستبدالها قريباً.',
-    hiveId: '5', hiveName: 'خلية #8', apiaryName: 'منحل الربيع',
-    createdAt: new Date(Date.now() - 1800000).toISOString(),
-    actionUrl: '/hives/5', actionLabel: 'تفقد الملكة'
-  },
-  {
-    id: '6', type: 'DISEASE', priority: 'HIGH',
-    title: 'اشتباه بمرض في الخلية #2',
-    message: 'تم رصد أعراض مرضية على الحضنة في الخلية #2. يجب عزل الخلية وفحصها فوراً.',
-    hiveId: '6', hiveName: 'خلية #2', apiaryName: 'منحل الربيع',
-    createdAt: new Date(Date.now() - 300000).toISOString(),
-    actionUrl: '/hives/6', actionLabel: 'معاينة'
-  },
-  {
-    id: '7', type: 'WEATHER', priority: 'MEDIUM',
-    title: 'تحذير من عاصفة وشيكة',
-    message: 'من المتوقع حدوث عاصفة خلال 24 ساعة. يُنصح بتأمين الخلايا وتثبيت الأغطية.',
-    createdAt: new Date(Date.now() - 5400000).toISOString()
-  },
-  {
-    id: '8', type: 'IRREGULAR_BROOD', priority: 'MEDIUM',
-    title: 'حضنة غير منتظمة في خلية #15',
-    message: 'نمط الحضنة في الخلية #15 غير منتظم. قد يكون هناك مشكلة في الملكة أو مرض.',
-    hiveId: '7', hiveName: 'خلية #15', apiaryName: 'منحل الصيف',
-    createdAt: new Date(Date.now() - 14400000).toISOString(),
-    actionUrl: '/hives/7', actionLabel: 'فحص الخلية'
-  },
-  {
-    id: '9', type: 'NO_EGGS', priority: 'HIGH',
-    title: 'غياب البيض في خلية #20',
-    message: 'لم يتم العثور على بيض في الخلية #20 خلال آخر فحص. قد تكون الملكة مفقودة.',
-    hiveId: '8', hiveName: 'خلية #20', apiaryName: 'منحل الخريف',
-    createdAt: new Date(Date.now() - 600000).toISOString(),
-    actionUrl: '/hives/8', actionLabel: 'تحقق من الملكة'
-  },
-  {
-    id: '10', type: 'LOW_HONEY', priority: 'LOW',
-    title: 'نقص مخزون العسل',
-    message: 'مخزون العسل في الخلية #6 أقل من 15%. يُنصح بتأجيل الحصاد لهذه الخلية.',
-    hiveId: '9', hiveName: 'خلية #6', apiaryName: 'منحل الربيع',
-    createdAt: new Date(Date.now() - 86400000 * 2).toISOString()
-  }
-]
-
 const AlertsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all-alerts')
   const [filterPriority, setFilterPriority] = useState<string>('all')
   const [filterType, setFilterType] = useState<string>('all')
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
+  const [alerts, setAlerts] = useState<Alert[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadAlerts()
+  }, [])
+
+  const loadAlerts = async () => {
+    try {
+      setLoading(true)
+      const data = await getAlerts()
+      // Map backend response to frontend Alert type
+      const mappedAlerts = (data || []).map((a: any) => ({
+        id: a.id,
+        type: a.alertType || a.type || 'OTHER',
+        priority: a.priority || 'MEDIUM',
+        title: a.title,
+        message: a.message,
+        hiveId: a.hiveId,
+        hiveName: a.hiveName,
+        apiaryName: a.apiaryName,
+        apiaryId: a.apiaryId,
+        createdAt: a.createdAt,
+        status: a.status,
+        actionUrl: a.actionUrl,
+        actionLabel: a.actionLabel
+      }))
+      setAlerts(mappedAlerts)
+    } catch {
+      setAlerts([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredAlerts = useMemo(() => {
-    return mockAlerts.filter(alert => {
+    return alerts.filter(alert => {
       if (dismissedIds.has(alert.id)) return false
       if (filterPriority !== 'all' && alert.priority !== filterPriority) return false
       if (filterType !== 'all' && alert.type !== filterType) return false
       return true
     })
-  }, [filterPriority, filterType, dismissedIds])
+  }, [alerts, filterPriority, filterType, dismissedIds])
 
   const stats = useMemo(() => ({
     total: filteredAlerts.length,

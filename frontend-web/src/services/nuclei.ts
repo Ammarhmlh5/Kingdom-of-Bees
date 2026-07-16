@@ -6,6 +6,7 @@ export interface Nucleus {
     nucleusNumber: string;
     name?: string;
     queenId?: string;
+    queen?: { id: string; name?: string; queenNumber?: string };
     status: string;
     purpose: string;
     frameCount: number;

@@ -228,7 +228,7 @@ export function TaskCard({ task, onComplete, onEdit, onDelete }: TaskCardProps) 
                             {task.assignedTo && (
                                 <div className="flex items-center gap-1">
                                     <User className="w-3 h-3" />
-                                    <span>{task.assignedTo.name}</span>
+                                    <span>{task.assignedTo.fullName}</span>
                                 </div>
                             )}
                         </div>

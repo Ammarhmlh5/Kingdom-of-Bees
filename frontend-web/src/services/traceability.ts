@@ -26,6 +26,11 @@ export const getBatchQR = async (batchCode: string): Promise<{ qrImage: string; 
     return response.data;
 };
 
+export const trackProductPublic = async (batchCode: string): Promise<any> => {
+    const response = await api.get(`/traceability/public/${batchCode}`);
+    return response.data;
+};
+
 export const createBatch = async (data: {
     harvestRecordIds: string[];
     totalQuantityKg: number;
@@ -40,4 +45,5 @@ export const traceabilityService = {
     getBatchDetails,
     getBatchQR,
     createBatch,
+    trackProductPublic,
 };

@@ -8,9 +8,9 @@ interface FrameCardProps {
 
 const FrameCard: React.FC<FrameCardProps> = ({ frame, onClick }) => {
   // Calculate average percentages from both sides
-  const avgHoney = Math.round((frame.sideAHoneyPercentage + frame.sideBHoneyPercentage) / 2);
-  const avgBrood = Math.round((frame.sideABroodPercentage + frame.sideBBroodPercentage) / 2);
-  const avgPollen = Math.round((frame.sideAPollenPercentage + frame.sideBPollenPercentage) / 2);
+  const avgHoney = Math.round(((frame.sideAHoneyPercentage ?? 0) + (frame.sideBHoneyPercentage ?? 0)) / 2);
+  const avgBrood = Math.round(((frame.sideABroodPercentage ?? 0) + (frame.sideBBroodPercentage ?? 0)) / 2);
+  const avgPollen = Math.round(((frame.sideAPollenPercentage ?? 0) + (frame.sideBPollenPercentage ?? 0)) / 2);
 
   // Get brood age display
   const getBroodAgeDisplay = () => {

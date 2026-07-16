@@ -39,7 +39,7 @@ export default function InspectionDetailPage() {
         sideBBroodAge: frame.sideBBroodAge,
       };
 
-      await createSnapshotMutation.mutateAsync({ frameId, data: snapshotData });
+      await createSnapshotMutation.mutateAsync({ apiaryId: (inspection as any)?.apiaryId || '', hiveId: inspection?.hive?.id || '', data: snapshotData });
       setEditingFrameId(null);
     } catch (error: any) {
       alert('فشل حفظ التحديث: ' + error.message);
@@ -63,7 +63,7 @@ export default function InspectionDetailPage() {
           sideBBroodType: frame.sideBBroodType,
           sideBBroodAge: frame.sideBBroodAge,
         };
-        return createSnapshotMutation.mutateAsync({ frameId: frame.id, data: snapshotData });
+        return createSnapshotMutation.mutateAsync({ apiaryId: (inspection as any)?.apiaryId || '', hiveId: inspection?.hive?.id || '', data: snapshotData });
       });
 
       await Promise.all(promises);
@@ -113,7 +113,7 @@ export default function InspectionDetailPage() {
               فحص خلية #{inspection.hive?.hiveNumber}
             </h1>
             <p className="text-gray-500 mt-1">
-              {new Date(inspection.inspectionDate).toLocaleDateString('ar-SA')} • {inspection.inspectionType}
+              {new Date(inspection.inspectionDate ?? inspection.createdAt ?? '').toLocaleDateString('ar-SA')} • {inspection.inspectionType}
             </p>
           </div>
         </div>
@@ -187,9 +187,9 @@ export default function InspectionDetailPage() {
               <AlertTriangle className="w-5 h-5 text-red-500" />
               الملاحظات المكتشفة ({inspection.findings?.length || 0})
             </h3>
-            {inspection.findings?.length > 0 ? (
+            {(inspection.findings?.length ?? 0) > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {inspection.findings.map((finding: any) => (
+                {inspection.findings?.map((finding: any) => (
                   <div key={finding.id} className="p-4 bg-red-50 rounded-xl border border-red-100">
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-bold text-red-800">{finding.title}</span>
@@ -219,9 +219,9 @@ export default function InspectionDetailPage() {
               <Activity className="w-5 h-5 text-blue-500" />
               الإجراءات المتخذة ({inspection.actions?.length || 0})
             </h3>
-            {inspection.actions?.length > 0 ? (
+            {(inspection.actions?.length ?? 0) > 0 ? (
               <div className="space-y-3">
-                {inspection.actions.map((action: any) => (
+                {inspection.actions?.map((action: any) => (
                   <div key={action.id} className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
                     <div className="mt-1 w-2 h-2 rounded-full bg-blue-500 shadow-sm" />
                     <div>

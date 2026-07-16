@@ -3,11 +3,13 @@ import { frameService, FrameSnapshot } from '../../services/frames';
 import BroodAgeIndicator from './BroodAgeIndicator';
 
 interface FrameHistoryViewProps {
+  apiaryId?: string;
+  hiveId?: string;
   frameId: string;
   limit?: number;
 }
 
-const FrameHistoryView: React.FC<FrameHistoryViewProps> = ({ frameId, limit = 10 }) => {
+const FrameHistoryView: React.FC<FrameHistoryViewProps> = ({ apiaryId, hiveId, frameId, limit = 10 }) => {
   const [snapshots, setSnapshots] = useState<FrameSnapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +23,7 @@ const FrameHistoryView: React.FC<FrameHistoryViewProps> = ({ frameId, limit = 10
     try {
       setLoading(true);
       setError(null);
-      const data = await frameService.getFrameHistory(frameId, limit);
+      const data = await frameService.getFrameHistory(apiaryId || '', hiveId || '', frameId);
       setSnapshots(data);
     } catch (err: any) {
       setError(err.message);
@@ -99,9 +101,9 @@ const FrameHistoryView: React.FC<FrameHistoryViewProps> = ({ frameId, limit = 10
                 {/* Header */}
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <p className="text-sm text-gray-600">{formatDate(snapshot.recordedAt)}</p>
+                    <p className="text-sm text-gray-600">{formatDate(snapshot.recordedAt ?? snapshot.capturedAt)}</p>
                     {snapshot.user && (
-                      <p className="text-xs text-gray-500 mt-1">بواسطة: {snapshot.user.fullName}</p>
+                      <p className="text-xs text-gray-500 mt-1">بواسطة: {snapshot.user.name ?? ''}</p>
                     )}
                   </div>
                   {snapshot.inspection && (
@@ -119,20 +121,20 @@ const FrameHistoryView: React.FC<FrameHistoryViewProps> = ({ frameId, limit = 10
                     <div className="space-y-1 text-xs">
                       <div className="flex justify-between">
                         <span>عسل:</span>
-                        <span className={getPercentageColor(snapshot.sideAHoneyPercentage)}>
-                          {snapshot.sideAHoneyPercentage}%
+                        <span className={getPercentageColor(snapshot.sideAHoneyPercentage ?? 0)}>
+                          {snapshot.sideAHoneyPercentage ?? 0}%
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>حضنة:</span>
-                        <span className={getPercentageColor(snapshot.sideABroodPercentage)}>
-                          {snapshot.sideABroodPercentage}%
+                        <span className={getPercentageColor(snapshot.sideABroodPercentage ?? 0)}>
+                          {snapshot.sideABroodPercentage ?? 0}%
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>لقاح:</span>
-                        <span className={getPercentageColor(snapshot.sideAPollenPercentage)}>
-                          {snapshot.sideAPollenPercentage}%
+                        <span className={getPercentageColor(snapshot.sideAPollenPercentage ?? 0)}>
+                          {snapshot.sideAPollenPercentage ?? 0}%
                         </span>
                       </div>
                     </div>
@@ -144,20 +146,20 @@ const FrameHistoryView: React.FC<FrameHistoryViewProps> = ({ frameId, limit = 10
                     <div className="space-y-1 text-xs">
                       <div className="flex justify-between">
                         <span>عسل:</span>
-                        <span className={getPercentageColor(snapshot.sideBHoneyPercentage)}>
-                          {snapshot.sideBHoneyPercentage}%
+                        <span className={getPercentageColor(snapshot.sideBHoneyPercentage ?? 0)}>
+                          {snapshot.sideBHoneyPercentage ?? 0}%
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>حضنة:</span>
-                        <span className={getPercentageColor(snapshot.sideBBroodPercentage)}>
-                          {snapshot.sideBBroodPercentage}%
+                        <span className={getPercentageColor(snapshot.sideBBroodPercentage ?? 0)}>
+                          {snapshot.sideBBroodPercentage ?? 0}%
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>لقاح:</span>
-                        <span className={getPercentageColor(snapshot.sideBPollenPercentage)}>
-                          {snapshot.sideBPollenPercentage}%
+                        <span className={getPercentageColor(snapshot.sideBPollenPercentage ?? 0)}>
+                          {snapshot.sideBPollenPercentage ?? 0}%
                         </span>
                       </div>
                     </div>
@@ -174,7 +176,7 @@ const FrameHistoryView: React.FC<FrameHistoryViewProps> = ({ frameId, limit = 10
                         {snapshot.sideABroodAge && (
                           <div className="mb-3">
                             <p className="text-xs text-gray-600 mb-2">عمر الحضنة:</p>
-                            <BroodAgeIndicator age={snapshot.sideABroodAge} size="sm" />
+                            <BroodAgeIndicator age={snapshot.sideABroodAge as any} size="sm" />
                           </div>
                         )}
                         {snapshot.sideABroodType && (
@@ -190,7 +192,7 @@ const FrameHistoryView: React.FC<FrameHistoryViewProps> = ({ frameId, limit = 10
                         {snapshot.sideBBroodAge && (
                           <div className="mb-3">
                             <p className="text-xs text-gray-600 mb-2">عمر الحضنة:</p>
-                            <BroodAgeIndicator age={snapshot.sideBBroodAge} size="sm" />
+                            <BroodAgeIndicator age={snapshot.sideBBroodAge as any} size="sm" />
                           </div>
                         )}
                         {snapshot.sideBBroodType && (

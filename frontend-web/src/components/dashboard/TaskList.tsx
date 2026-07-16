@@ -5,7 +5,7 @@ import { TaskSortDialog, TaskSortOptions } from './TaskSortDialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Filter, SortAsc } from 'lucide-react';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { TaskFilters } from '@/services/apiaryTasks';

@@ -68,9 +68,9 @@ export class SimulationController {
         return ApiResponse.unauthorized(res);
       }
 
-      // This would fetch from HiveSimulation table
-      // For now, returning placeholder
-      ApiResponse.success(res, [], 'سيتم تنفيذ هذه الميزة قريباً');
+      // Simulation history is not persisted in the database yet
+      // Return empty array for now
+      ApiResponse.success(res, [], 'سجل المحاكاة فارغ حالياً');
     } catch (error) {
       logger.error('Error fetching simulation history:', error);
       ApiResponse.error(res, 'فشل في جلب سجل المحاكاة', 500);

@@ -11,7 +11,6 @@ export interface Frame {
     pollenPercentage?: number;
     condition?: string;
     ageYears?: number;
-    // Legacy fields for backward compatibility
     sideAHoneyPercentage?: number;
     sideBHoneyPercentage?: number;
     sideABroodPercentage?: number;
@@ -20,7 +19,12 @@ export interface Frame {
     sideBPollenPercentage?: number;
     sideABroodAge?: string;
     sideBBroodAge?: string;
+    sideABroodType?: string;
+    sideBBroodType?: string;
     content?: string;
+    hiveId?: string;
+    lastUpdated?: string;
+    updatedBy?: string;
 }
 
 export interface FrameData {
@@ -39,7 +43,22 @@ export interface FrameData {
 }
 
 export interface CreateSnapshotData {
-    frames: Frame[];
+    frames?: Frame[];
+    inspectionId?: string;
+    frameId?: string;
+    notes?: string;
+    sideAHoneyPercentage?: number;
+    sideBHoneyPercentage?: number;
+    sideABroodPercentage?: number;
+    sideBBroodPercentage?: number;
+    sideAPollenPercentage?: number;
+    sideBPollenPercentage?: number;
+    sideABroodAge?: string;
+    sideBBroodAge?: string;
+    sideABroodType?: string;
+    sideBBroodType?: string;
+    sideABroodAgeYears?: number;
+    sideBBroodAgeYears?: number;
 }
 
 export interface FrameSnapshot {
@@ -47,6 +66,21 @@ export interface FrameSnapshot {
     frameId: string;
     snapshot: Frame;
     capturedAt: string;
+    recordedAt?: string;
+    user?: { id: string; name: string; email: string };
+    inspection?: { id: string; date: string };
+    inspectionId?: string;
+    notes?: string;
+    sideAHoneyPercentage?: number;
+    sideBHoneyPercentage?: number;
+    sideABroodPercentage?: number;
+    sideBBroodPercentage?: number;
+    sideAPollenPercentage?: number;
+    sideBPollenPercentage?: number;
+    sideABroodAge?: string;
+    sideBBroodAge?: string;
+    sideABroodType?: string;
+    sideBBroodType?: string;
 }
 
 export interface FrameUpdate {
@@ -68,30 +102,10 @@ export interface UpdateFramesData {
 }
 
 export const getHiveFrames = async (apiaryId: string, hiveId: string): Promise<Frame[]> => {
-    console.log('[frames.ts] getHiveFrames called', { apiaryId, hiveId });
-    try {
-        const response = await api.get(`/apiaries/${apiaryId}/hives/${hiveId}/frames`);
-        console.log('[frames.ts] Status:', response.status);
-        console.log('[frames.ts] Data keys:', Object.keys(response.data || {}));
-        console.log('[frames.ts] frames value:', response.data?.frames);
-        console.log('[frames.ts] type of frames:', typeof response.data?.frames);
-        console.log('[frames.ts] is frames array:', Array.isArray(response.data?.frames));
-        
-        const frames = response.data?.frames;
-        if (!frames) {
-            console.warn('[frames.ts] WARNING: frames is undefined!');
-            return [];
-        }
-        if (!Array.isArray(frames)) {
-            console.warn('[frames.ts] WARNING: frames is not an array!', frames);
-            return [];
-        }
-        console.log('[frames.ts] Returning frames with length:', frames.length);
-        return frames;
-    } catch (err) {
-        console.error('[frames.ts] Error:', err);
-        throw err;
-    }
+    const response = await api.get(`/apiaries/${apiaryId}/hives/${hiveId}/frames`);
+    const frames = response.data?.frames || response.data?.data || response.data;
+    if (!Array.isArray(frames)) return [];
+    return frames;
 };
 
 export const updateFrames = async (apiaryId: string, hiveId: string, frames: UpdateFramesData): Promise<any> => {
@@ -109,4 +123,9 @@ export const createSnapshot = async (apiaryId: string, hiveId: string, data: Cre
     return response.data;
 };
 
-export const frameService = { getHiveFrames, updateFrames, updateFrame, createSnapshot };
+export const getFrameHistory = async (apiaryId: string, hiveId: string, frameId: string): Promise<FrameSnapshot[]> => {
+    const response = await api.get(`/apiaries/${apiaryId}/hives/${hiveId}/frames/${frameId}/snapshots`);
+    return response.data?.data || response.data || [];
+};
+
+export const frameService = { getHiveFrames, updateFrames, updateFrame, createSnapshot, getFrameHistory };

@@ -13,7 +13,7 @@ export default function FrameDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
-  const { data: frame, isLoading: loading, error: queryError, refetch: loadFrame } = useFrame(frameId || '');
+  const { data: frame, isLoading: loading, error: queryError, refetch: loadFrame } = useFrame(undefined, undefined, frameId || '');
   const deleteFrameMutation = useDeleteFrame();
 
   const error = queryError ? (queryError as any).message : null;
@@ -24,7 +24,7 @@ export default function FrameDetailPage() {
     }
 
     try {
-      await deleteFrameMutation.mutateAsync(frameId!);
+      await deleteFrameMutation.mutateAsync({ apiaryId: '', hiveId: frame?.hiveId || '', frameId: frameId! });
       navigate(`/hives/${frame?.hiveId}`);
     } catch (err: any) {
       alert('فشل حذف الإطار: ' + err.message);
@@ -74,7 +74,7 @@ export default function FrameDetailPage() {
               إطار {frame.position} - طابق {frame.story}
             </h1>
             <p className="text-gray-500 mt-1">
-              آخر تحديث: {new Date(frame.lastUpdated).toLocaleDateString('ar-SA')}
+              آخر تحديث: {new Date(frame.lastUpdated ?? '').toLocaleDateString('ar-SA')}
             </p>
           </div>
         </div>
@@ -120,7 +120,7 @@ export default function FrameDetailPage() {
 
           {isEditing ? (
             <FrameEditor
-              frameId={frameId!}
+              frame={frame}
               onSave={handleSave}
               onCancel={() => setIsEditing(false)}
             />
@@ -236,7 +236,7 @@ export default function FrameDetailPage() {
       {showHistory && (
         <div className="bg-white rounded-2xl border border-gray-100 p-6">
           <h2 className="text-xl font-bold mb-4">تاريخ الإطار</h2>
-          <FrameHistoryView frameId={frameId!} limit={20} />
+          <FrameHistoryView apiaryId="" hiveId={frame?.hiveId} frameId={frameId!} limit={20} />
         </div>
       )}
     </div>

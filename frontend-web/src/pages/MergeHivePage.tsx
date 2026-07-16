@@ -36,12 +36,13 @@ export function MergeHivePage() {
         try {
             await mergeHivesMutation.mutateAsync({
                 apiaryId,
-                survivorHiveId: data.survivorHiveId,
-                mergedHiveId: data.mergedHiveId,
-                mergeDate: new Date().toISOString(),
-                method: data.method,
-                outcome: {},
-                notes: data.notes
+                hiveId: data.survivorHiveId,
+                data: {
+                    targetHiveId: data.mergedHiveId,
+                    mergeMethod: data.method,
+                    queenKept: 'TARGET',
+                    notes: data.notes
+                }
             });
             navigate(`/operations?apiaryId=${apiaryId}`);
         } catch (e) {
@@ -76,7 +77,7 @@ export function MergeHivePage() {
                         <div className="space-y-4 p-4 border rounded-md bg-green-50/50">
                             <Label className="text-green-800 font-bold">الخلية الناجية (Survivor)</Label>
                             <p className="text-xs text-green-600 mb-2">هذه الخلية ستبقى وتستقبل نحل وموارد الخلية الأخرى.</p>
-                            <Select onValueChange={(val) => setValue('survivorHiveId', val)}>
+                            <Select onValueChange={(val: any) => setValue('survivorHiveId', val)}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="اختر الخلية الباقية..." />
                                 </SelectTrigger>
@@ -96,7 +97,7 @@ export function MergeHivePage() {
                                 <AlertTriangle className="inline w-3 h-3 mr-1" />
                                 هذه الخلية ستصبح "مدمجة" (غير نشطة) بعد العملية.
                             </p>
-                            <Select onValueChange={(val) => setValue('mergedHiveId', val)}>
+                            <Select onValueChange={(val: any) => setValue('mergedHiveId', val)}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="اختر الخلية التي سيتم ضمها..." />
                                 </SelectTrigger>
@@ -112,7 +113,7 @@ export function MergeHivePage() {
 
                         <div className="space-y-2">
                             <Label>طريقة الدمج</Label>
-                            <Select onValueChange={(val) => setValue('method', val)} defaultValue="NEWSPAPER">
+                            <Select onValueChange={(val: any) => setValue('method', val)} defaultValue="NEWSPAPER">
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>

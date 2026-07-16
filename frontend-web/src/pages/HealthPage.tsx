@@ -389,7 +389,7 @@ function AddDiseaseModal({ apiaryId, onClose }: AddDiseaseModalProps) {
     );
 
     const selectedDisease = diseaseLibrary.find((d: any) => d.id === selectedDiseaseId);
-    const availableTreatments = selectedDisease?.treatments || [];
+    const availableTreatments = (selectedDisease as any)?.treatment || [];
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

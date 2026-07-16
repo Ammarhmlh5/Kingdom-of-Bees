@@ -50,8 +50,8 @@ const harvestTypeArb = fc.constantFrom<HarvestType>(
 const harvestRecordArb: fc.Arbitrary<HarvestRecord> = fc.record({
     id: fc.uuid(),
     harvestType: harvestTypeArb,
-    harvestDate: fc.date().map(d => d.toISOString().split('T')[0]),
-    totalQuantity: fc.float({ min: 0.001, max: 10000, noNaN: true }),
+    harvestDate: fc.date({ min: new Date('2020-01-01'), max: new Date('2030-12-31') }).filter(d => !isNaN(d.getTime())).map(d => d.toISOString().split('T')[0]),
+    totalQuantity: fc.float({ min: Math.fround(0.001), max: Math.fround(10000), noNaN: true }),
     unit: fc.constantFrom('KG', 'GRAM', 'LITER'),
     hiveId: fc.option(fc.uuid(), { nil: undefined }),
 });

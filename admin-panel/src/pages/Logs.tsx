@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-// import { fetchWithAuth } from '@/config';
+import { fetchWithAuth } from '@/config';
 import { FileText, Filter, Download } from 'lucide-react';
 
 interface LogEntry {
@@ -24,15 +24,13 @@ export default function Logs() {
         async function loadLogs() {
             try {
                 setLoading(true);
-                // TODO: Implement API endpoint
-                // const response = await fetchWithAuth('/admin/logs');
-                // const data = await response.json();
-                // if (data.success) {
-                //     setLogs(data.data);
-                // }
-
-                // Mock data for now
-                setLogs([]);
+                const response = await fetchWithAuth(`/admin/logs?filter=${filter}`);
+                const data = await response.json();
+                if (data.success) {
+                    setLogs(data.data.logs || []);
+                } else {
+                    setLogs([]);
+                }
             } catch (err) {
                 console.error('Failed to load logs', err);
                 setError(err instanceof Error ? err.message : 'حدث خطأ أثناء تحميل البيانات');

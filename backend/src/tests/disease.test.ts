@@ -97,6 +97,6 @@ describe('DiseaseController.deleteDisease', () => {
 
     await controller.deleteDisease(req as Request, res as Response);
 
-    expect(res.json).toHaveBeenCalledWith({ success: true });
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
   });
 });

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useOperationsLog, useDeleteOperation } from '@/hooks/api/useOperationsLog';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Operation, OperationType } from '@/services/operationsLog';
 import FeedingEditModal from '@/components/operations/FeedingEditModal';
 import InspectionEditModal from '@/components/operations/InspectionEditModal';

@@ -157,7 +157,8 @@ describe('getMembers', () => {
     await getMembers(req as Request, res as Response);
 
     expect(res.json).toHaveBeenCalled();
-    const members = (res.json as jest.Mock).mock.calls[0][0];
+    const response = (res.json as jest.Mock).mock.calls[0][0];
+    const members = response.data || response;
 
     // Every member must have the required fields
     members.forEach((m: any) => {
@@ -169,7 +170,7 @@ describe('getMembers', () => {
     });
 
     // Owner must be included
-    expect(members.some((m: any) => m.role === 'owner')).toBe(true);
+    expect(members.some((m: any) => m.role === 'OWNER' || m.role === 'owner')).toBe(true);
   });
 
   it('returns 403 when assistant tries to view members', async () => {

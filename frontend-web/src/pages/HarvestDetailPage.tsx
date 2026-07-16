@@ -29,6 +29,7 @@ export function HarvestDetailPage() {
         setSubmitting(true);
         try {
             const payload = {
+                apiaryId: record?.apiary?.id || '',
                 harvestRecordId: id,
                 hiveId: selectedHive,
                 yieldKg: Number(yieldKg),

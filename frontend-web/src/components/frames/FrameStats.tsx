@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import frameService from '../../services/frames';
+import { frameService } from '../../services/frames';
 
 interface FrameStatsProps {
+    apiaryId?: string;
     hiveId: string;
     showCharts?: boolean;
 }
@@ -24,7 +25,7 @@ interface Stats {
     };
 }
 
-const FrameStats: React.FC<FrameStatsProps> = ({ hiveId, showCharts = false }) => {
+const FrameStats: React.FC<FrameStatsProps> = ({ apiaryId, hiveId, showCharts = false }) => {
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -38,7 +39,7 @@ const FrameStats: React.FC<FrameStatsProps> = ({ hiveId, showCharts = false }) =
             setLoading(true);
             setError(null);
 
-            const frames = await frameService.getHiveFrames(hiveId);
+            const frames = await frameService.getHiveFrames(apiaryId || '', hiveId);
 
             // Calculate stats
             const totalFrames = frames.length;
@@ -75,8 +76,8 @@ const FrameStats: React.FC<FrameStatsProps> = ({ hiveId, showCharts = false }) =
                 if (avgHoney < 10 && avgBrood < 10 && avgPollen < 10) emptyFrames++;
 
                 // Brood age distribution
-                if (frame.sideABroodAge) broodAgeDistribution[frame.sideABroodAge]++;
-                if (frame.sideBBroodAge) broodAgeDistribution[frame.sideBBroodAge]++;
+                if (frame.sideABroodAge && frame.sideABroodAge in broodAgeDistribution) broodAgeDistribution[frame.sideABroodAge as keyof typeof broodAgeDistribution]++;
+                if (frame.sideBBroodAge && frame.sideBBroodAge in broodAgeDistribution) broodAgeDistribution[frame.sideBBroodAge as keyof typeof broodAgeDistribution]++;
             });
 
             setStats({

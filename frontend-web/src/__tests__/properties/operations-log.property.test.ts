@@ -95,8 +95,8 @@ const operationArb: fc.Arbitrary<Operation> = fc.record({
     operationDate: fc.date({
         min: new Date('2020-01-01'),
         max: new Date('2030-12-31'),
-    }).map(d => d.toISOString()),
-    createdAt: fc.date().map(d => d.toISOString()),
+    }).filter(d => !isNaN(d.getTime())).map(d => d.toISOString()),
+    createdAt: fc.date({ min: new Date('2020-01-01'), max: new Date('2030-12-31') }).filter(d => !isNaN(d.getTime())).map(d => d.toISOString()),
 });
 
 // ─── Property 8: Operation display contains all required fields ───────────────
@@ -173,8 +173,8 @@ describe('Property 10: فلترة العمليات تُعيد نتائج مطا�
         fc.assert(
             fc.property(
                 fc.array(operationArb, { minLength: 0, maxLength: 30 }),
-                fc.date({ min: new Date('2022-01-01'), max: new Date('2024-01-01') }),
-                fc.date({ min: new Date('2024-01-02'), max: new Date('2026-12-31') }),
+                fc.date({ min: new Date('2022-01-01'), max: new Date('2024-01-01') }).filter(d => !isNaN(d.getTime())),
+                fc.date({ min: new Date('2024-01-02'), max: new Date('2026-12-31') }).filter(d => !isNaN(d.getTime())),
                 (operations, from, to) => {
                     const startDate = from.toISOString().split('T')[0];
                     const endDate = to.toISOString().split('T')[0];
@@ -261,8 +261,8 @@ describe('Property 12: الأرقام التسلسلية للعمليات متز
         fc.assert(
             fc.property(
                 fc.uuid(),
-                fc.date({ min: new Date('2020-01-01'), max: new Date('2023-12-31') }),
-                fc.date({ min: new Date('2024-01-01'), max: new Date('2026-12-31') }),
+                fc.date({ min: new Date('2020-01-01'), max: new Date('2023-12-31') }).filter(d => !isNaN(d.getTime())),
+                fc.date({ min: new Date('2024-01-01'), max: new Date('2026-12-31') }).filter(d => !isNaN(d.getTime())),
                 (apiaryId, olderDate, newerDate) => {
                     // Simulate sequential numbering
                     const olderOp = { apiaryId, operationNumber: 1, operationDate: olderDate.toISOString() };

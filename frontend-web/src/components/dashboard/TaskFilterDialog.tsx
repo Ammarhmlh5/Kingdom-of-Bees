@@ -104,7 +104,7 @@ export function TaskFilterDialog({
                         <Label htmlFor="status-filter">الحالة</Label>
                         <Select
                             value={filters.status || ''}
-                            onValueChange={(value) => 
+                            onValueChange={(value: string) => 
                                 setFilters({ 
                                     ...filters, 
                                     status: value ? value as TaskStatus : undefined 
@@ -131,7 +131,7 @@ export function TaskFilterDialog({
                         <Label htmlFor="type-filter">نوع المهمة</Label>
                         <Select
                             value={filters.taskType || ''}
-                            onValueChange={(value) => 
+                            onValueChange={(value: string) => 
                                 setFilters({ 
                                     ...filters, 
                                     taskType: value ? value as TaskType : undefined 
@@ -159,7 +159,7 @@ export function TaskFilterDialog({
                             <Label htmlFor="hive-filter">الخلية</Label>
                             <Select
                                 value={filters.hiveId || ''}
-                                onValueChange={(value) => 
+                                onValueChange={(value: string) => 
                                     setFilters({ 
                                         ...filters, 
                                         hiveId: value || undefined 
@@ -186,7 +186,7 @@ export function TaskFilterDialog({
                         <Label htmlFor="overdue-filter">المهام المتأخرة</Label>
                         <Select
                             value={filters.overdue !== undefined ? String(filters.overdue) : ''}
-                            onValueChange={(value) => 
+                            onValueChange={(value: string) => 
                                 setFilters({ 
                                     ...filters, 
                                     overdue: value === '' ? undefined : value === 'true'

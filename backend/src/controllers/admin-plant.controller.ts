@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AdminPlantService } from '../services/admin-plant.service';
 import { AuthenticatedRequest } from '../types/auth.types';
 import { ApiResponse } from '../utils/response';
+import { parsePagination } from '../utils/pagination';
 import { createPlantSchema, updatePlantSchema } from '../validators/plant.schema';
 
 const service = new AdminPlantService();
@@ -10,12 +11,13 @@ export class AdminPlantController {
 
   async list(req: Request, res: Response) {
     try {
-      const { page, limit, type, search, verified } = req.query;
+      const { page, limit, search } = parsePagination(req);
+      const { type, verified } = req.query;
       const result = await service.listPlants({
-        page: page ? Number(page) : undefined,
-        limit: limit ? Number(limit) : undefined,
+        page,
+        limit,
         type: type as string,
-        search: search as string,
+        search,
         verified: verified !== undefined ? verified === 'true' : undefined,
       });
       return ApiResponse.success(res, result);

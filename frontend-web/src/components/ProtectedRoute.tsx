@@ -26,7 +26,7 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     }
 
     // Check role-based access
-    if (allowedRoles && user && !allowedRoles.includes(user.userType)) {
+    if (allowedRoles && user && !allowedRoles.includes(user.role)) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-100">
                 <div className="text-center p-8 bg-white rounded-2xl shadow-xl">

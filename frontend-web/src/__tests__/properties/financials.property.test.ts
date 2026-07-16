@@ -53,12 +53,12 @@ function filterByPeriod(records: FinancialRecord[], from: Date, to: Date): Finan
 const financialRecordArb: fc.Arbitrary<FinancialRecord> = fc.record({
     id: fc.uuid(),
     type: fc.constantFrom<'REVENUE' | 'EXPENSE'>('REVENUE', 'EXPENSE'),
-    amount: fc.float({ min: 0.01, max: 1_000_000, noNaN: true }),
+    amount: fc.float({ min: Math.fround(0.01), max: Math.fround(1_000_000), noNaN: true }),
     category: fc.string({ minLength: 1, maxLength: 50 }),
     recordDate: fc.date({
         min: new Date('2020-01-01'),
         max: new Date('2030-12-31'),
-    }).map(d => d.toISOString().split('T')[0]),
+    }).filter(d => !isNaN(d.getTime())).map(d => d.toISOString().split('T')[0]),
 });
 
 // ─── Property 3: Financial summary reflects sum of records ───────────────────
@@ -119,8 +119,8 @@ describe('Property 4: فلترة الفترة الزمنية تُعيد سجلا
         fc.assert(
             fc.property(
                 fc.array(financialRecordArb, { minLength: 0, maxLength: 50 }),
-                fc.date({ min: new Date('2020-01-01'), max: new Date('2025-01-01') }),
-                fc.date({ min: new Date('2025-01-02'), max: new Date('2030-12-31') }),
+                fc.date({ min: new Date('2020-01-01'), max: new Date('2025-01-01') }).filter(d => !isNaN(d.getTime())),
+                fc.date({ min: new Date('2025-01-02'), max: new Date('2030-12-31') }).filter(d => !isNaN(d.getTime())),
                 (records, from, to) => {
                     const filtered = filterByPeriod(records, from, to);
 
@@ -139,8 +139,8 @@ describe('Property 4: فلترة الفترة الزمنية تُعيد سجلا
         fc.assert(
             fc.property(
                 fc.array(financialRecordArb, { minLength: 1, maxLength: 30 }),
-                fc.date({ min: new Date('2022-01-01'), max: new Date('2023-01-01') }),
-                fc.date({ min: new Date('2023-01-02'), max: new Date('2024-12-31') }),
+                fc.date({ min: new Date('2022-01-01'), max: new Date('2023-01-01') }).filter(d => !isNaN(d.getTime())),
+                fc.date({ min: new Date('2023-01-02'), max: new Date('2024-12-31') }).filter(d => !isNaN(d.getTime())),
                 (records, from, to) => {
                     const filtered = filterByPeriod(records, from, to);
                     const outsideRange = filtered.filter(r => {

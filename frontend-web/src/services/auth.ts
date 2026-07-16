@@ -39,6 +39,7 @@ export interface User {
     email: string;
     fullName: string;
     role: 'OWNER' | 'WORKER' | 'ADMIN';
+    userType?: 'OWNER' | 'WORKER' | 'ADMIN';
 }
 
 export const authService = {

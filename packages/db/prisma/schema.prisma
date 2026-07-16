@@ -26,6 +26,7 @@ model UserProfile {
   password  String?
   phone     String?
   avatarUrl String? @map("avatar_url")
+  googleId  String? @unique @map("google_id")
 
   // User Type
   userType UserType @default(EXPLORER) @map("user_type")
@@ -58,6 +59,13 @@ model UserProfile {
   // Status
   isActive   Boolean @default(true) @map("is_active")
   isVerified Boolean @default(false) @map("is_verified")
+
+  // Security
+  failedLoginAttempts  Int      @default(0) @map("failed_login_attempts")
+  twoFactorEnabled     Boolean  @default(false) @map("two_factor_enabled")
+  twoFactorBackupCodes Json?    @map("two_factor_backup_codes")
+  passwordHistory      Json?    @map("password_history")
+  ipWhitelistEnabled   Boolean  @default(false) @map("ip_whitelist_enabled")
 
   // Statistics
   totalApiaries Int @default(0) @map("total_apiaries")
@@ -245,7 +253,7 @@ model Apiary {
   ownerId String @map("owner_id") @db.Uuid
 
   // Basic Information
-  name        String
+  name        String @unique
   description String?
   
   // Invitation
@@ -477,6 +485,7 @@ model Hive {
   operationAnalyses     OperationAnalysis[]
 
   @@unique([apiaryId, hiveNumber])
+  @@unique([apiaryId, name])
   @@index([apiaryId])
   @@index([status])
   @@index([queenId])
@@ -1790,6 +1799,7 @@ model SplitOperation {
 
   // Method
   method SplitMethod
+  splitType String? @map("split_type")
 
   // Resource Distribution
   resourceDistribution Json @map("resource_distribution")
@@ -1835,6 +1845,7 @@ model MergeOperation {
   // Method
   method        MergeMethod
   methodDetails Json?       @map("method_details")
+  queenKept     String?     @map("queen_kept")
 
   // Outcome
   outcome Json
@@ -3336,6 +3347,8 @@ model InspectionSchedule {
   inspectionId   String?   @map("inspection_id") @db.Uuid
   skipped        Boolean   @default(false) @map("skipped")
   skipReason     String?   @map("skip_reason")
+  notes          String?
+  reminderSent   Boolean  @default(false) @map("reminder_sent")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
@@ -3560,6 +3573,28 @@ model ApiaryMetrics {
   apiary Apiary @relation(fields: [apiaryId], references: [id], onDelete: Cascade)
 
   @@map("apiary_metrics")
+}
+
+// ============================================================================
+// Dashboard Stats (Cached aggregates for fast dashboard loading)
+// ============================================================================
+
+model DashboardStats {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @map("user_id") @db.Uuid
+
+  totalApiaries        Int     @default(0) @map("total_apiaries")
+  totalHives           Int     @default(0) @map("total_hives")
+  totalHoneyKg         Decimal @default(0) @map("total_honey_kg") @db.Decimal(10, 2)
+  totalProductionEntries Int   @default(0) @map("total_production_entries")
+  activeAlerts         Int     @default(0) @map("active_alerts")
+
+  lastInspectionDate DateTime? @map("last_inspection_date") @db.Timestamptz
+
+  calculatedAt DateTime @default(now()) @map("calculated_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("dashboard_stats")
 }
 
 // ============================================================================

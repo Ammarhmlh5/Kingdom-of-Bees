@@ -76,7 +76,7 @@ export function CreateTaskModal({
             newErrors.taskType = 'نوع المهمة مطلوب';
         }
 
-        if (formData.priority < 1 || formData.priority > 10) {
+        if ((formData.priority ?? 5) < 1 || (formData.priority ?? 5) > 10) {
             newErrors.priority = 'الأولوية يجب أن تكون بين 1 و 10';
         }
 
@@ -151,7 +151,7 @@ export function CreateTaskModal({
                             </Label>
                             <Select
                                 value={formData.taskType}
-                                onValueChange={(value) => 
+                                onValueChange={(value: string) => 
                                     setFormData({ ...formData, taskType: value as TaskType })
                                 }
                             >
@@ -235,7 +235,7 @@ export function CreateTaskModal({
                                 <Label htmlFor="hive">الخلية (اختياري)</Label>
                                 <Select
                                     value={formData.hiveId}
-                                    onValueChange={(value) => 
+                                    onValueChange={(value: string) => 
                                         setFormData({ ...formData, hiveId: value })
                                     }
                                 >

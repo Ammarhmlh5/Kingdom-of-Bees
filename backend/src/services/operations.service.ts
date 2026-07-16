@@ -113,13 +113,23 @@ export class OperationsService {
       operationsByType[a] > operationsByType[b] ? a : b
     , '');
 
+    // Fetch worker name from user profile
+    let workerName = 'غير معروف';
+    if (mostActiveWorkerId && mostActiveWorkerId !== 'unknown') {
+      const worker = await prisma.userProfile.findUnique({
+        where: { id: mostActiveWorkerId },
+        select: { fullName: true, email: true }
+      });
+      workerName = worker?.fullName || worker?.email || 'غير معروف';
+    }
+
     return {
       totalOperations: operations.length,
       operationsByType,
       operationsByWorker,
       mostActiveWorker: {
         id: mostActiveWorkerId,
-        name: 'Worker Name', // TODO: Fetch from user profile
+        name: workerName,
         count: operationsByWorker[mostActiveWorkerId] || 0
       },
       mostCommonOperation: {
@@ -141,8 +151,28 @@ export class OperationsService {
       throw new Error('Operation not found');
     }
 
-    // Check if user has permission (owner or performer)
-    // TODO: Add proper authorization check
+    // Check if user has permission (owner, admin, or performer)
+    const apiaryMembership = await prisma.apiaryMembership.findUnique({
+      where: {
+        apiaryId_userId: {
+          apiaryId: operation.apiaryId,
+          userId: userId
+        }
+      }
+    });
+
+    const user = await prisma.userProfile.findUnique({
+      where: { id: userId },
+      select: { userType: true }
+    });
+
+    const isOwner = apiaryMembership?.role === 'OWNER';
+    const isAdmin = user?.userType === 'ADMIN';
+    const isPerformer = operation.performedBy === userId;
+
+    if (!isOwner && !isAdmin && !isPerformer) {
+      throw new Error('ليس لديك صلاحية لحذف هذه العملية');
+    }
 
     // Delete the operation
     await prisma.apiaryOperation.delete({

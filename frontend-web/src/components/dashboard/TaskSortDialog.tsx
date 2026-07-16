@@ -90,7 +90,7 @@ export function TaskSortDialog({
                         <Label htmlFor="sort-field">الترتيب حسب</Label>
                         <Select
                             value={sort.field}
-                            onValueChange={(value) => 
+                            onValueChange={(value: string) => 
                                 setSort({ 
                                     ...sort, 
                                     field: value as TaskSortOptions['field']
@@ -116,7 +116,7 @@ export function TaskSortDialog({
                         <Label htmlFor="sort-direction">الاتجاه</Label>
                         <Select
                             value={sort.direction}
-                            onValueChange={(value) => 
+                            onValueChange={(value: string) => 
                                 setSort({ 
                                     ...sort, 
                                     direction: value as 'asc' | 'desc'

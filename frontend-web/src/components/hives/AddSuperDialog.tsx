@@ -17,7 +17,10 @@ export function AddSuperDialog({ hive, onClose, onSuccess }: AddSuperDialogProps
     const [formData, setFormData] = useState({
         type: 'HONEY', // HONEY, DEEP
         frames: '10',
-        hasExcluder: true
+        hasExcluder: true,
+        operationType: 'ADD_SECOND_STORY' as 'ADD_SECOND_STORY' | 'ADD_THIRD_STORY' | 'ADD_EXCLUDER',
+        targetStory: 2 as 2 | 3,
+        framesInSuper: 10
     });
     const [isSaving, setIsSaving] = useState(false);
 

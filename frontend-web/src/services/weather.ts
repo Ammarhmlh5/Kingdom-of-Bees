@@ -9,6 +9,8 @@ export interface WeatherData {
     conditions?: string;
     date: string;
     foragingOpportunity?: string;
+    temperatureMax?: number;
+    temperatureMin?: number;
 }
 
 export const weatherService = {

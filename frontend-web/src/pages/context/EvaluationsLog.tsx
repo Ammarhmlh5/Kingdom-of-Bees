@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useEvaluationsLog, useDeleteAssessment } from '@/hooks/api/useEvaluationsLog';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { AssessmentType, AssessmentOperation } from '@/services/evaluationsLog';
 
 const ASSESSMENT_CONFIG: Record<AssessmentType, { label: string; icon: React.ElementType; color: string; bg: string }> = {

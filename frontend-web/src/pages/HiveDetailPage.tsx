@@ -1,17 +1,31 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit, Trash2, Activity } from 'lucide-react';
-import { useHive } from '@/hooks/api';
+import { useHive, useDeleteHive } from '@/hooks/api';
 import HiveFramesView from '../components/frames/HiveFramesView';
 import HiveAnalysisCard from '../components/analysis/HiveAnalysisCard';
 import AlertsList from '../components/alerts/AlertsList';
 
 export default function HiveDetailPage() {
-  const { hiveId } = useParams<{ hiveId: string }>();
+  const { hiveId, id: apiaryId } = useParams<{ hiveId: string; id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'frames' | 'analysis' | 'alerts' | 'info'>('frames');
 
-  const { data: hive, isLoading: loading } = useHive(hiveId || '');
+  const { data: hive, isLoading: loading } = useHive(apiaryId || '', hiveId || '');
+  const deleteHiveMutation = useDeleteHive();
+
+  const handleDelete = async () => {
+    if (!confirm('هل أنت متأكد من حذف هذه الخلية؟ سيتم حذف جميع البيانات المرتبطة بها.')) {
+      return;
+    }
+    try {
+      await deleteHiveMutation.mutateAsync({ apiaryId: apiaryId || '', id: hiveId || '' });
+      navigate('/hives');
+    } catch (err) {
+      console.error('Error deleting hive:', err);
+      alert('فشل حذف الخلية. يرجى المحاولة مرة أخرى.');
+    }
+  };
 
 
 
@@ -54,7 +68,7 @@ export default function HiveDetailPage() {
               خلية #{hive.hiveNumber}
             </h1>
             <p className="text-gray-500 mt-1">
-              {hive.apiary?.name} • {hive.hiveType}
+              {hive.apiary?.name} • {hive.hiveType?.nameAr || hive.hiveType?.nameEn || (typeof hive.hiveType === 'string' ? hive.hiveType : '')}
             </p>
           </div>
         </div>
@@ -68,16 +82,12 @@ export default function HiveDetailPage() {
             <span>تعديل</span>
           </button>
           <button
-            onClick={() => {
-              if (confirm('هل أنت متأكد من حذف هذه الخلية؟')) {
-                // TODO: Implement delete
-                navigate('/hives');
-              }
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+            onClick={handleDelete}
+            disabled={deleteHiveMutation.isPending}
+            className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors disabled:opacity-50"
           >
             <Trash2 className="w-4 h-4" />
-            <span>حذف</span>
+            <span>{deleteHiveMutation.isPending ? 'جاري الحذف...' : 'حذف'}</span>
           </button>
         </div>
       </div>
@@ -139,7 +149,7 @@ export default function HiveDetailPage() {
       {/* Content */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         {activeTab === 'frames' && (
-          <HiveFramesView hiveId={hiveId!} />
+          <HiveFramesView apiaryId={apiaryId} hiveId={hiveId!} />
         )}
 
         {activeTab === 'analysis' && (
@@ -162,7 +172,7 @@ export default function HiveDetailPage() {
               </div>
               <div>
                 <label className="text-sm text-gray-600">نوع الخلية</label>
-                <p className="text-lg font-semibold">{hive.hiveType}</p>
+                <p className="text-lg font-semibold">{hive.hiveType?.nameAr || hive.type || ''}</p>
               </div>
               <div>
                 <label className="text-sm text-gray-600">الحالة</label>

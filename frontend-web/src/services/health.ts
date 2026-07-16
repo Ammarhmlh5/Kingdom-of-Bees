@@ -11,7 +11,8 @@ export interface HealthRecord {
     disease?: { nameAr: string; nameEn: string };
 }
 
-export async function getHealthRecords(apiaryId: string) {
+export async function getHealthRecords(apiaryIdOrContext: string | { queryKey: string[]; signal?: AbortSignal }) {
+    const apiaryId = typeof apiaryIdOrContext === 'string' ? apiaryIdOrContext : apiaryIdOrContext.queryKey[1];
     try {
         const response = await api.get(`/apiaries/${apiaryId}/diseases`);
         return response.data;

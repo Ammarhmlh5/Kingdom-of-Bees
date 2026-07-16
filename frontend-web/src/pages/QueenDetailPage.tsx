@@ -66,17 +66,17 @@ export default function QueenDetailPage() {
                         </div>
                         <div>
                             <label className="text-sm text-muted-foreground block mb-1">الموقع الحالي</label>
-                            {queen.currentHive ? (
-                                <Link to={`/hives/${queen.currentHive.id}`}>
+                            {queen.hive ? (
+                                <Link to={`/hives/${queen.hive.id}`}>
                                     <Badge variant="outline" className="cursor-pointer hover:bg-amber-50">
-                                        خلية رقم {queen.currentHive.hiveNumber}
+                                        خلية رقم {queen.hive.hiveNumber}
                                     </Badge>
                                 </Link>
                             ) : queen.currentNucleus ? (
                                 <Link to={`/nuclei?id=${queen.currentNucleus.id}`}>
                                     {/* Ideally link to detail, but nuclei page is list for now */}
                                     <Badge variant="outline" className="cursor-pointer hover:bg-blue-50">
-                                        نوية رقم {queen.currentNucleus.nucleusNumber}
+                                        نوية رقم {queen.currentNucleus.name}
                                     </Badge>
                                 </Link>
                             ) : (
@@ -111,7 +111,7 @@ export default function QueenDetailPage() {
                             <label className="text-sm text-muted-foreground block mb-1">الأم</label>
                             {queen.motherQueen ? (
                                 <Link to={`/queens/${queen.motherQueen.id}`} className="block hover:bg-amber-50 p-2 rounded transition">
-                                    <div className="font-bold text-amber-800">{queen.motherQueen.queenNumber}</div>
+                                    <div className="font-bold text-amber-800">{queen.motherQueen.name}</div>
                                     <div className="text-xs text-gray-500">{queen.motherQueen.name}</div>
                                 </Link>
                             ) : (

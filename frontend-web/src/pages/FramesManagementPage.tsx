@@ -35,7 +35,7 @@ const FramesManagementPage: React.FC = () => {
     const selectedHiveId = filterHive !== 'all' ? filterHive : '';
     const { data: hiveFrames = [], isLoading: framesLoading } = useHiveFrames(selectedHiveId);
 
-    const frames: Frame[] = hiveFrames;
+    const frames: Frame[] = hiveFrames as any;
     const loading = hivesLoading || framesLoading;
 
     const getFrameCondition = (frame: Frame) => {

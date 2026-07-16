@@ -4,7 +4,7 @@ import { Plus, Milk, AlertCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFeedingRecords, useCreateFeedingRecord } from '@/hooks/api/useFeeding';
 import { useHives } from '@/hooks/api';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const CONTENT_TYPES = [
     { value: 'SUGAR_SYRUP', label: 'شراب سكر', type: 'internal' },

@@ -49,9 +49,13 @@ const HiveAnalysisCard: React.FC<HiveAnalysisCardProps> = ({ hiveId }) => {
 
   if (!analysis) return null;
 
+  const strength = analysis.strength ?? { rating: 'MEDIUM', score: 0, factors: {} };
+  const feedingNeed = analysis.feedingNeed ?? { urgency: 'LOW', needed: false, recommendations: [] };
+  const swarmRisk = analysis.swarmRisk ?? { risk: 'LOW', score: 0, factors: {}, recommendations: [] };
+
   // Get strength color
   const getStrengthColor = () => {
-    switch (analysis.strength.rating) {
+    switch (strength.rating) {
       case 'VERY_STRONG': return 'text-green-600 bg-green-50';
       case 'STRONG': return 'text-blue-600 bg-blue-50';
       case 'MEDIUM': return 'text-yellow-600 bg-yellow-50';
@@ -63,7 +67,7 @@ const HiveAnalysisCard: React.FC<HiveAnalysisCardProps> = ({ hiveId }) => {
 
   // Get urgency color
   const getUrgencyColor = () => {
-    switch (analysis.feedingNeed.urgency) {
+    switch (feedingNeed.urgency) {
       case 'CRITICAL': return 'text-red-600 bg-red-50';
       case 'HIGH': return 'text-orange-600 bg-orange-50';
       case 'MEDIUM': return 'text-yellow-600 bg-yellow-50';
@@ -74,7 +78,7 @@ const HiveAnalysisCard: React.FC<HiveAnalysisCardProps> = ({ hiveId }) => {
 
   // Get swarm risk color
   const getSwarmRiskColor = () => {
-    switch (analysis.swarmRisk.risk) {
+    switch (swarmRisk.risk) {
       case 'IMMINENT': return 'text-red-600 bg-red-50';
       case 'HIGH': return 'text-orange-600 bg-orange-50';
       case 'MODERATE': return 'text-yellow-600 bg-yellow-50';
@@ -89,7 +93,7 @@ const HiveAnalysisCard: React.FC<HiveAnalysisCardProps> = ({ hiveId }) => {
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4">
         <h2 className="text-2xl font-bold">تحليل الخلية</h2>
         <p className="text-sm text-blue-100 mt-1">
-          آخر تحديث: {new Date(analysis.analyzedAt).toLocaleString('ar-SA')}
+          آخر تحديث: {new Date(analysis.analyzedAt ?? '').toLocaleString('ar-SA')}
         </p>
       </div>
 
@@ -110,24 +114,24 @@ const HiveAnalysisCard: React.FC<HiveAnalysisCardProps> = ({ hiveId }) => {
         <div className="border rounded-lg p-4">
           <h3 className="font-bold text-lg mb-3">💪 قوة الخلية</h3>
           <div className={`inline-block px-4 py-2 rounded-full font-bold ${getStrengthColor()}`}>
-            {analysis.strength.rating} - {analysis.strength.score}/100
+            {strength.rating} - {strength.score}/100
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
             <div className="bg-gray-50 p-3 rounded">
               <div className="text-gray-600">إطارات الحضنة</div>
-              <div className="font-bold text-lg">{analysis.strength.factors.broodFrames}</div>
+              <div className="font-bold text-lg">{strength.factors.broodFrames}</div>
             </div>
             <div className="bg-gray-50 p-3 rounded">
               <div className="text-gray-600">إطارات العسل</div>
-              <div className="font-bold text-lg">{analysis.strength.factors.honeyFrames}</div>
+              <div className="font-bold text-lg">{strength.factors.honeyFrames}</div>
             </div>
             <div className="bg-gray-50 p-3 rounded">
               <div className="text-gray-600">إطارات اللقاح</div>
-              <div className="font-bold text-lg">{analysis.strength.factors.pollenFrames}</div>
+              <div className="font-bold text-lg">{strength.factors.pollenFrames}</div>
             </div>
             <div className="bg-gray-50 p-3 rounded">
               <div className="text-gray-600">عمر الحضنة</div>
-              <div className="font-bold text-sm">{analysis.strength.factors.broodAge}</div>
+              <div className="font-bold text-sm">{strength.factors.broodAge}</div>
             </div>
           </div>
         </div>
@@ -136,35 +140,35 @@ const HiveAnalysisCard: React.FC<HiveAnalysisCardProps> = ({ hiveId }) => {
         <div className="border rounded-lg p-4">
           <h3 className="font-bold text-lg mb-3">🍯 احتياج التغذية</h3>
           <div className={`inline-block px-4 py-2 rounded-full font-bold ${getUrgencyColor()}`}>
-            {analysis.feedingNeed.urgency}
+            {feedingNeed.urgency}
           </div>
-          {analysis.feedingNeed.needed && (
+          {feedingNeed.needed && (
             <div className="mt-4 space-y-2">
               <div className="bg-blue-50 p-3 rounded">
                 <div className="text-sm text-gray-600">النوع المطلوب</div>
-                <div className="font-bold">{analysis.feedingNeed.type}</div>
+                <div className="font-bold">{feedingNeed.type}</div>
               </div>
               <div className="bg-blue-50 p-3 rounded">
                 <div className="text-sm text-gray-600">الكمية</div>
-                <div className="font-bold">{analysis.feedingNeed.quantityKg} كجم</div>
+                <div className="font-bold">{feedingNeed.quantityKg} كجم</div>
               </div>
               <div className="bg-blue-50 p-3 rounded">
                 <div className="text-sm text-gray-600">السبب</div>
-                <div className="text-sm">{analysis.feedingNeed.reason}</div>
+                <div className="text-sm">{feedingNeed.reason}</div>
               </div>
-              {analysis.feedingNeed.recommendations.length > 0 && (
+              {feedingNeed.recommendations.length > 0 && (
                 <div className="mt-2">
                   <div className="text-sm font-semibold mb-1">التوصيات:</div>
                   <ul className="text-sm space-y-1">
-                    {analysis.feedingNeed.recommendations.map((rec, index) => (
-                      <li key={index} className="text-gray-700">• {rec}</li>
+                    {feedingNeed.recommendations.map((rec, index) => (
+                      <li key={index} className="text-gray-700">• {rec.rec}</li>
                     ))}
                   </ul>
                 </div>
               )}
             </div>
           )}
-          {!analysis.feedingNeed.needed && (
+          {!feedingNeed.needed && (
             <p className="text-green-600 mt-2">✓ الخلية لديها احتياطيات كافية</p>
           )}
         </div>
@@ -173,29 +177,29 @@ const HiveAnalysisCard: React.FC<HiveAnalysisCardProps> = ({ hiveId }) => {
         <div className="border rounded-lg p-4">
           <h3 className="font-bold text-lg mb-3">🐝 خطر التطريد</h3>
           <div className={`inline-block px-4 py-2 rounded-full font-bold ${getSwarmRiskColor()}`}>
-            {analysis.swarmRisk.risk} - {analysis.swarmRisk.score}/100
+            {swarmRisk.risk} - {swarmRisk.score}/100
           </div>
           <div className="mt-4 space-y-2">
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className={`p-2 rounded ${analysis.swarmRisk.factors.congestion ? 'bg-red-100' : 'bg-green-100'}`}>
-                {analysis.swarmRisk.factors.congestion ? '⚠️' : '✓'} ازدحام
+              <div className={`p-2 rounded ${swarmRisk.factors.congestion ? 'bg-red-100' : 'bg-green-100'}`}>
+                {swarmRisk.factors.congestion ? '⚠️' : '✓'} ازدحام
               </div>
-              <div className={`p-2 rounded ${analysis.swarmRisk.factors.noEggs ? 'bg-red-100' : 'bg-green-100'}`}>
-                {analysis.swarmRisk.factors.noEggs ? '⚠️' : '✓'} غياب البيض
+              <div className={`p-2 rounded ${swarmRisk.factors.noEggs ? 'bg-red-100' : 'bg-green-100'}`}>
+                {swarmRisk.factors.noEggs ? '⚠️' : '✓'} غياب البيض
               </div>
-              <div className={`p-2 rounded ${analysis.swarmRisk.factors.oldBrood ? 'bg-red-100' : 'bg-green-100'}`}>
-                {analysis.swarmRisk.factors.oldBrood ? '⚠️' : '✓'} حضنة قديمة
+              <div className={`p-2 rounded ${swarmRisk.factors.oldBrood ? 'bg-red-100' : 'bg-green-100'}`}>
+                {swarmRisk.factors.oldBrood ? '⚠️' : '✓'} حضنة قديمة
               </div>
-              <div className={`p-2 rounded ${analysis.swarmRisk.factors.highHoney ? 'bg-red-100' : 'bg-green-100'}`}>
-                {analysis.swarmRisk.factors.highHoney ? '⚠️' : '✓'} عسل عالي
+              <div className={`p-2 rounded ${swarmRisk.factors.highHoney ? 'bg-red-100' : 'bg-green-100'}`}>
+                {swarmRisk.factors.highHoney ? '⚠️' : '✓'} عسل عالي
               </div>
             </div>
-            {analysis.swarmRisk.recommendations.length > 0 && (
+            {swarmRisk.recommendations.length > 0 && (
               <div className="mt-3">
                 <div className="text-sm font-semibold mb-1">التوصيات:</div>
                 <ul className="text-sm space-y-1">
-                  {analysis.swarmRisk.recommendations.map((rec, index) => (
-                    <li key={index} className="text-gray-700">• {rec}</li>
+                  {swarmRisk.recommendations.map((rec, index) => (
+                    <li key={index} className="text-gray-700">• {rec.rec}</li>
                   ))}
                 </ul>
               </div>

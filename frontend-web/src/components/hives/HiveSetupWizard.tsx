@@ -81,10 +81,11 @@ export function HiveSetupWizard({ apiaryId, onClose }: { apiaryId: string; onClo
             await Promise.all(promises);
 
             onClose(); // Close wizard on success
-            // TODO: Trigger refresh/toast
+            // Show success feedback via parent refresh
+            window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'success', message: 'تم حفظ إعدادات الخلية بنجاح' } }));
         } catch (error) {
             console.error("Failed to save hive setup:", error);
-            // TODO: Show error toast
+            window.dispatchEvent(new CustomEvent('toast', { detail: { type: 'error', message: 'فشل حفظ الإعدادات. يرجى المحاولة مرة أخرى.' } }));
         } finally {
             setIsSaving(false);
         }

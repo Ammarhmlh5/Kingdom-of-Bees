@@ -31,21 +31,16 @@ export function SplitHivePage() {
         setSubmitting(true);
         try {
             // Prepare payload
-            const payload = {
+            await splitHiveMutation.mutateAsync({
                 apiaryId,
-                motherHiveId: data.motherHiveId,
-                splitDate: new Date().toISOString(),
-                newHivesCount: parseInt(data.newHivesCount),
-                method: data.method,
-                resourceDistribution: {}, // Simplified for now
-                notes: data.notes,
-                newHivesData: Array.from({ length: parseInt(data.newHivesCount) }).map((_, i) => ({
-                    name: `${motherHive?.name || 'Mother'} - Split ${i + 1}`,
-                    hiveType: motherHive?.hiveType || 'LANGSTROTH'
-                }))
-            };
-
-            await splitHiveMutation.mutateAsync(payload);
+                hiveId: data.motherHiveId,
+                data: {
+                    strategy: data.method,
+                    newHiveNumber: `Split-${Date.now()}`,
+                    queenType: 'NORMAL',
+                    notes: data.notes
+                }
+            });
             navigate(`/operations?apiaryId=${apiaryId}`);
         } catch (e) {
             console.error(e);
@@ -78,7 +73,7 @@ export function SplitHivePage() {
 
                         <div className="space-y-2">
                             <Label>الخلية الأم (المصدر)</Label>
-                            <Select onValueChange={(val) => setValue('motherHiveId', val)}>
+                            <Select onValueChange={(val: any) => setValue('motherHiveId', val)}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="اختر الخلية..." />
                                 </SelectTrigger>
@@ -99,7 +94,7 @@ export function SplitHivePage() {
                             </div>
                             <div className="space-y-2">
                                 <Label>طريقة التقسيم</Label>
-                                <Select onValueChange={(val) => setValue('method', val)} defaultValue="WALK_AWAY">
+                                <Select onValueChange={(val: any) => setValue('method', val)} defaultValue="WALK_AWAY">
                                     <SelectTrigger>
                                         <SelectValue />
                                     </SelectTrigger>

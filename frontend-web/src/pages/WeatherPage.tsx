@@ -29,7 +29,7 @@ export function WeatherPage() {
                         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                             <div className="text-center md:text-right">
                                 <div className="text-gray-500 text-sm mb-1">{new Date(current.date).toLocaleDateString('ar-SA')}</div>
-                                <div className="text-5xl font-bold text-slate-800">{Math.round(current.temperatureCelsius)}°</div>
+                                <div className="text-5xl font-bold text-slate-800">{Math.round(current.temperatureCelsius ?? 0)}°</div>
                                 <div className="text-xl text-slate-600 mt-2">{current.conditions}</div>
                                 {current.foragingOpportunity && (
                                     <span className="inline-block mt-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
@@ -51,7 +51,7 @@ export function WeatherPage() {
                                 </div>
                                 <div className="flex flex-col items-center">
                                     <Thermometer className="w-6 h-6 text-red-400 mb-1" />
-                                    <span className="font-semibold">{current.temperatureMax}° / {current.temperatureMin}°</span>
+                                    <span className="font-semibold">{current.temperatureMax ?? '-'}° / {current.temperatureMin ?? '-'}°</span>
                                     <span className="text-xs text-slate-500">الحرارة</span>
                                 </div>
                             </div>

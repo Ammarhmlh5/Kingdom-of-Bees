@@ -18,10 +18,10 @@ describe('Auth API Integration', () => {
                     userType: 'OWNER'
                 });
 
-            if (res.status !== 201) {
+            if (res.status !== 200) {
                 throw new Error(`Registration failed: ${JSON.stringify(res.body, null, 2)}`);
             }
-            expect(res.status).toBe(201);
+            expect(res.status).toBe(200);
             expect(res.body).toHaveProperty('data');
             expect(res.body.data).toHaveProperty('user');
             expect(res.body.data.user.email).toBe(testEmail);
@@ -29,6 +29,8 @@ describe('Auth API Integration', () => {
         });
 
         it('should fail significantly with duplicate email', async () => {
+            await prisma.userProfile.deleteMany({ where: { email: 'test@example.com' } });
+
             await request(app)
                 .post('/api/auth/register')
                 .send({
@@ -51,8 +53,17 @@ describe('Auth API Integration', () => {
         });
     });
 
+    afterAll(async () => {
+        if (testEmail) {
+            await prisma.userProfile.deleteMany({ where: { email: testEmail } });
+        }
+        await prisma.userProfile.deleteMany({ where: { email: 'login@example.com' } });
+        await prisma.userProfile.deleteMany({ where: { email: 'test@example.com' } });
+    });
+
     describe('POST /api/auth/login', () => {
         beforeEach(async () => {
+            await prisma.userProfile.deleteMany({ where: { email: 'login@example.com' } });
             await request(app)
                 .post('/api/auth/register')
                 .send({

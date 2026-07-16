@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Calendar, AlertCircle, Check, X, Clock, ArrowRight, Filter, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { getApiarySchedules, completeSchedule, cancelSchedule, InspectionSchedule } from '@/services/inspectionSchedules';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type FilterTab = 'all' | 'pending' | 'completed' | 'overdue';
 
@@ -133,10 +133,10 @@ export function InspectionSchedulesPage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {filteredSchedules.length === 0 ? (
           <div className="p-12 text-center text-gray-500">
-            {searchTerm || activeTab !== 'all'
-              ? 'لا توجد جداول تطابق بحثك'
-              : activeTab === 'overdue'
-                ? 'لا توجد فحوصات متأخرة'
+            {activeTab === 'overdue' && !searchTerm
+              ? 'لا توجد فحوصات متأخرة'
+              : searchTerm || activeTab !== 'all'
+                ? 'لا توجد جداول تطابق بحثك'
                 : 'لا توجد جداول فحص. قم بتسجيل فحص جديد لإنشاء جدول تلقائياً'}
           </div>
         ) : (

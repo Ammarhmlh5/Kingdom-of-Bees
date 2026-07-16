@@ -29,7 +29,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ allowedRoles, children }) 
     }
 
     // Check if user has required role
-    if (!allowedRoles.includes(user.userType)) {
+    if (!allowedRoles.includes(user.role)) {
         return <Navigate to="/unauthorized" replace />;
     }
 

@@ -42,6 +42,7 @@ import FeedingPage from "./pages/context/FeedingPage";
 import QueensPage from "./pages/context/QueensPage";
 import FinancialsPage from "./pages/context/FinancialsPage";
 import OperationsLogPage from "./pages/context/OperationsLogPage";
+import GlobalFeedingPage from "./pages/GlobalFeedingPage";
 import { InspectionSchedulesPage } from "./pages/InspectionSchedulesPage";
 
 // Queen & Inspection Pages
@@ -128,9 +129,8 @@ function App() {
                 <Route path="health" element={<HealthPage />} />
                 <Route
                   path="feeding"
-                  element={<Placeholder title="إدارة التغذية (عام)" />}
-                />{" "}
-                {/* TODO: Create Global Feeding Page */}
+                  element={<GlobalFeedingPage />}
+                />
                 <Route path="marketplace" element={<MarketplacePage />} />
                 <Route
                   path="team"

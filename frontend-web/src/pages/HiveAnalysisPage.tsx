@@ -1,14 +1,14 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, TrendingDown, Minus, AlertTriangle } from 'lucide-react';
-import { useHiveStats } from '@/hooks/api';
-import type { HiveStats, FrameTrend } from '../services/analysis';
+import { useHiveAnalysis } from '@/hooks/api';
+import type { HiveAnalysis, FrameTrend } from '../services/analysis';
 
 export default function HiveAnalysisPage() {
   const { hiveId } = useParams<{ hiveId: string }>();
   const navigate = useNavigate();
 
-  const { data: stats, isLoading: loading, error: queryError, refetch: loadStats } = useHiveStats(hiveId || '');
+  const { data: analysis, isLoading: loading, error: queryError, refetch: loadStats } = useHiveAnalysis(hiveId || '');
   const error = queryError ? (queryError as any).message : null;
 
   const getRatingColor = (rating: string) => {
@@ -147,12 +147,12 @@ export default function HiveAnalysisPage() {
     );
   }
 
-  if (error || !stats) {
+  if (error || !analysis) {
     return (
       <div className="text-center py-12">
         <p className="text-red-600">{error || 'فشل تحميل التحليل'}</p>
         <button
-          onClick={loadStats}
+          onClick={() => loadStats()}
           className="mt-4 text-yellow-600 hover:text-yellow-700 underline"
         >
           إعادة المحاولة
@@ -160,6 +160,10 @@ export default function HiveAnalysisPage() {
       </div>
     );
   }
+
+  const strength = analysis.strength ?? { rating: 'MEDIUM', score: 0, factors: {} as Record<string, string> };
+  const feedingNeed = analysis.feedingNeed ?? { urgency: 'LOW', needed: false, recommendations: [] as Array<{ rec: string; index: number }> };
+  const swarmRisk = analysis.swarmRisk ?? { risk: 'LOW', score: 0, factors: {} as Record<string, string>, recommendations: [] as Array<{ rec: string; index: number }> };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -174,7 +178,7 @@ export default function HiveAnalysisPage() {
         <div>
           <h1 className="text-3xl font-black text-gray-900">تحليل شامل للخلية</h1>
           <p className="text-gray-500 mt-1">
-            تم التحليل: {new Date(stats.analyzedAt).toLocaleString('ar-SA')}
+            تم التحليل: {new Date(analysis.analyzedAt ?? '').toLocaleString('ar-SA')}
           </p>
         </div>
       </div>
@@ -186,28 +190,28 @@ export default function HiveAnalysisPage() {
           <h2 className="text-lg font-bold mb-4">قوة الخلية</h2>
           <div className="text-center mb-4">
             <div className="text-5xl font-black text-yellow-600 mb-2">
-              {stats.strength.score}
+              {strength.score}
             </div>
-            <span className={`px-4 py-2 rounded-full text-sm font-bold ${getRatingColor(stats.strength.rating)}`}>
-              {getRatingLabel(stats.strength.rating)}
+            <span className={`px-4 py-2 rounded-full text-sm font-bold ${getRatingColor(strength.rating)}`}>
+              {getRatingLabel(strength.rating)}
             </span>
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600">إطارات الحضنة:</span>
-              <span className="font-semibold">{stats.strength.factors.broodFrames}</span>
+              <span className="font-semibold">{strength.factors.broodFrames}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">إطارات العسل:</span>
-              <span className="font-semibold">{stats.strength.factors.honeyFrames}</span>
+              <span className="font-semibold">{strength.factors.honeyFrames}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">إطارات اللقاح:</span>
-              <span className="font-semibold">{stats.strength.factors.pollenFrames}</span>
+              <span className="font-semibold">{strength.factors.pollenFrames}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">إجمالي الإطارات:</span>
-              <span className="font-semibold">{stats.strength.factors.totalFrames}</span>
+              <span className="font-semibold">{strength.factors.totalFrames}</span>
             </div>
           </div>
         </div>
@@ -216,30 +220,30 @@ export default function HiveAnalysisPage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-6">
           <h2 className="text-lg font-bold mb-4">احتياج التغذية</h2>
           <div className="text-center mb-4">
-            <span className={`px-4 py-2 rounded-full text-sm font-bold ${getUrgencyColor(stats.feedingNeed.urgency)}`}>
-              {getUrgencyLabel(stats.feedingNeed.urgency)}
+            <span className={`px-4 py-2 rounded-full text-sm font-bold ${getUrgencyColor(feedingNeed.urgency)}`}>
+              {getUrgencyLabel(feedingNeed.urgency)}
             </span>
           </div>
-          {stats.feedingNeed.needed ? (
+          {feedingNeed.needed ? (
             <div className="space-y-3">
               <div>
                 <label className="text-xs text-gray-600">نوع التغذية</label>
-                <p className="font-semibold">{stats.feedingNeed.type}</p>
+                <p className="font-semibold">{feedingNeed.type}</p>
               </div>
               <div>
                 <label className="text-xs text-gray-600">الكمية المطلوبة</label>
-                <p className="font-semibold">{stats.feedingNeed.quantityKg} كجم</p>
+                <p className="font-semibold">{feedingNeed.quantityKg} كجم</p>
               </div>
               <div>
                 <label className="text-xs text-gray-600">السبب</label>
-                <p className="text-sm text-gray-700">{stats.feedingNeed.reason}</p>
+                <p className="text-sm text-gray-700">{feedingNeed.reason}</p>
               </div>
-              {stats.feedingNeed.recommendations.length > 0 && (
+              {feedingNeed.recommendations.length > 0 && (
                 <div>
                   <label className="text-xs text-gray-600">التوصيات</label>
                   <ul className="text-sm text-gray-700 list-disc list-inside space-y-1 mt-1">
-                    {stats.feedingNeed.recommendations.map((rec, idx) => (
-                      <li key={idx}>{rec}</li>
+                    {feedingNeed.recommendations.map((rec, idx) => (
+                      <li key={idx}>{rec.rec}</li>
                     ))}
                   </ul>
                 </div>
@@ -257,44 +261,44 @@ export default function HiveAnalysisPage() {
           <h2 className="text-lg font-bold mb-4">خطر التطريد</h2>
           <div className="text-center mb-4">
             <div className="text-4xl font-black text-orange-600 mb-2">
-              {stats.swarmRisk.score}%
+              {swarmRisk.score}%
             </div>
-            <span className={`px-4 py-2 rounded-full text-sm font-bold ${getRiskColor(stats.swarmRisk.risk)}`}>
-              {getRiskLabel(stats.swarmRisk.risk)}
+            <span className={`px-4 py-2 rounded-full text-sm font-bold ${getRiskColor(swarmRisk.risk)}`}>
+              {getRiskLabel(swarmRisk.risk)}
             </span>
           </div>
           <div className="space-y-2 text-sm mb-4">
             <div className="flex justify-between items-center">
               <span className="text-gray-600">ازدحام:</span>
-              <span className={stats.swarmRisk.factors.congestion ? 'text-red-600 font-semibold' : 'text-green-600'}>
-                {stats.swarmRisk.factors.congestion ? 'نعم' : 'لا'}
+              <span className={swarmRisk.factors.congestion ? 'text-red-600 font-semibold' : 'text-green-600'}>
+                {swarmRisk.factors.congestion ? 'نعم' : 'لا'}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600">غياب البيض:</span>
-              <span className={stats.swarmRisk.factors.noEggs ? 'text-red-600 font-semibold' : 'text-green-600'}>
-                {stats.swarmRisk.factors.noEggs ? 'نعم' : 'لا'}
+              <span className={swarmRisk.factors.noEggs ? 'text-red-600 font-semibold' : 'text-green-600'}>
+                {swarmRisk.factors.noEggs ? 'نعم' : 'لا'}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600">حضنة قديمة:</span>
-              <span className={stats.swarmRisk.factors.oldBrood ? 'text-red-600 font-semibold' : 'text-green-600'}>
-                {stats.swarmRisk.factors.oldBrood ? 'نعم' : 'لا'}
+              <span className={swarmRisk.factors.oldBrood ? 'text-red-600 font-semibold' : 'text-green-600'}>
+                {swarmRisk.factors.oldBrood ? 'نعم' : 'لا'}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600">عسل عالي:</span>
-              <span className={stats.swarmRisk.factors.highHoney ? 'text-red-600 font-semibold' : 'text-green-600'}>
-                {stats.swarmRisk.factors.highHoney ? 'نعم' : 'لا'}
+              <span className={swarmRisk.factors.highHoney ? 'text-red-600 font-semibold' : 'text-green-600'}>
+                {swarmRisk.factors.highHoney ? 'نعم' : 'لا'}
               </span>
             </div>
           </div>
-          {stats.swarmRisk.recommendations.length > 0 && (
+          {swarmRisk.recommendations.length > 0 && (
             <div>
               <label className="text-xs text-gray-600">التوصيات</label>
               <ul className="text-sm text-gray-700 list-disc list-inside space-y-1 mt-1">
-                {stats.swarmRisk.recommendations.map((rec, idx) => (
-                  <li key={idx}>{rec}</li>
+                {swarmRisk.recommendations.map((rec, idx) => (
+                  <li key={idx}>{rec.rec}</li>
                 ))}
               </ul>
             </div>
@@ -303,7 +307,7 @@ export default function HiveAnalysisPage() {
       </div>
 
       {/* Trends */}
-      {stats.trends && stats.trends.length > 0 && (
+      {analysis.trends && analysis.trends.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 p-6">
           <h2 className="text-xl font-bold mb-4">اتجاهات الإطارات</h2>
           <div className="overflow-x-auto">
@@ -317,7 +321,7 @@ export default function HiveAnalysisPage() {
                 </tr>
               </thead>
               <tbody>
-                {stats.trends.map((trend: FrameTrend) => (
+                {analysis.trends.map((trend: FrameTrend) => (
                   <tr key={trend.frameId} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 font-medium">إطار {trend.position}</td>
                     <td className="py-3 px-4">

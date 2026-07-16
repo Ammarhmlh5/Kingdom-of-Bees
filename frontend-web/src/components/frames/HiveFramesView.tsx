@@ -5,11 +5,12 @@ import FrameCard from './FrameCard';
 import FrameEditor from './FrameEditor';
 
 interface HiveFramesViewProps {
+  apiaryId?: string;
   hiveId: string;
   onFrameClick?: (frame: Frame) => void;
 }
 
-const HiveFramesView: React.FC<HiveFramesViewProps> = ({ hiveId, onFrameClick }) => {
+const HiveFramesView: React.FC<HiveFramesViewProps> = ({ apiaryId, hiveId, onFrameClick }) => {
   const [frames, setFrames] = useState<Frame[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +24,7 @@ const HiveFramesView: React.FC<HiveFramesViewProps> = ({ hiveId, onFrameClick })
   const loadFrames = async () => {
     try {
       setLoading(true);
-      const data = await frameService.getHiveFrames(hiveId);
+      const data = await frameService.getHiveFrames(apiaryId || '', hiveId);
       setFrames(data);
       setError(null);
     } catch (err: any) {
@@ -45,7 +46,7 @@ const HiveFramesView: React.FC<HiveFramesViewProps> = ({ hiveId, onFrameClick })
   const handleSaveFrame = async (data: any) => {
     try {
       if (editingFrame) {
-        await frameService.updateFrame(editingFrame.id, data);
+        await frameService.updateFrame(apiaryId || '', editingFrame.hiveId || hiveId, editingFrame.id, data);
       }
       setShowEditor(false);
       setEditingFrame(null);
@@ -62,10 +63,11 @@ const HiveFramesView: React.FC<HiveFramesViewProps> = ({ hiveId, onFrameClick })
 
   // Group frames by story
   const framesByStory = frames.reduce((acc, frame) => {
-    if (!acc[frame.story]) {
-      acc[frame.story] = [];
+    const story = frame.story ?? 0;
+    if (!acc[story]) {
+      acc[story] = [];
     }
-    acc[frame.story].push(frame);
+    acc[story].push(frame);
     return acc;
   }, {} as Record<number, Frame[]>);
 
@@ -157,19 +159,19 @@ const HiveFramesView: React.FC<HiveFramesViewProps> = ({ hiveId, onFrameClick })
           </div>
           <div className="bg-white rounded-lg p-4 text-center">
             <div className="text-3xl font-bold text-yellow-600">
-              {frames.filter(f => (f.sideAHoneyPercentage + f.sideBHoneyPercentage) / 2 > 30).length}
+              {frames.filter(f => ((f.sideAHoneyPercentage ?? 0) + (f.sideBHoneyPercentage ?? 0)) / 2 > 30).length}
             </div>
             <div className="text-sm text-gray-600">إطارات عسل</div>
           </div>
           <div className="bg-white rounded-lg p-4 text-center">
             <div className="text-3xl font-bold text-amber-700">
-              {frames.filter(f => (f.sideABroodPercentage + f.sideBBroodPercentage) / 2 > 30).length}
+              {frames.filter(f => ((f.sideABroodPercentage ?? 0) + (f.sideBBroodPercentage ?? 0)) / 2 > 30).length}
             </div>
             <div className="text-sm text-gray-600">إطارات حضنة</div>
           </div>
           <div className="bg-white rounded-lg p-4 text-center">
             <div className="text-3xl font-bold text-orange-600">
-              {frames.filter(f => (f.sideAPollenPercentage + f.sideBPollenPercentage) / 2 > 20).length}
+              {frames.filter(f => ((f.sideAPollenPercentage ?? 0) + (f.sideBPollenPercentage ?? 0)) / 2 > 20).length}
             </div>
             <div className="text-sm text-gray-600">إطارات لقاح</div>
           </div>

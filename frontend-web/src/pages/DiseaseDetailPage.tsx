@@ -36,7 +36,7 @@ export default function DiseaseDetailPage() {
 
                     <div className="flex gap-2">
                         <Badge variant="outline">{disease.diseaseType}</Badge>
-                        <Badge className={disease.severity === 'CATASTROPHIC' ? 'bg-red-600' : 'bg-orange-500'}>
+                        <Badge className={disease.severity === 'CRITICAL' ? 'bg-red-600' : 'bg-orange-500'}>
                             {disease.severity}
                         </Badge>
                         {disease.contagiousness !== 'NONE' && (

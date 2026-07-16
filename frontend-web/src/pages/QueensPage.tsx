@@ -7,7 +7,7 @@ import { Loader2, Plus, Crown } from "lucide-react";
 
 export function QueensPage() {
     const { id: apiaryId } = useParams<{ id: string }>();
-    const { data: queens = [], isLoading: loading } = useQueens({ apiaryId });
+    const { data: queens = [], isLoading: loading } = useQueens(apiaryId);
 
     if (loading) {
         return (

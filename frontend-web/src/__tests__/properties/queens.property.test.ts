@@ -49,14 +49,14 @@ const queenArb: fc.Arbitrary<Queen> = fc.record({
     queenNumber: fc.option(fc.string({ minLength: 1, maxLength: 10 }), { nil: undefined }),
     status: queenStatusArb,
     source: fc.constantFrom('PURCHASED', 'BRED', 'CAUGHT', 'GIFTED'),
-    birthDate: fc.option(fc.date({ min: new Date('2015-01-01'), max: new Date() }).map(d => d.toISOString()), { nil: undefined }),
+    birthDate: fc.option(fc.date({ min: new Date('2015-01-01'), max: new Date() }).filter(d => !isNaN(d.getTime())).map(d => d.toISOString()), { nil: undefined }),
     markColor: fc.option(fc.string({ minLength: 1, maxLength: 20 }), { nil: undefined }),
     marked: fc.boolean(),
     hive: fc.option(
         fc.record({ id: fc.uuid(), hiveNumber: fc.string({ minLength: 1, maxLength: 5 }) }),
         { nil: undefined }
     ),
-    createdAt: fc.date().map(d => d.toISOString()),
+    createdAt: fc.date({ min: new Date('2020-01-01'), max: new Date('2030-12-31') }).filter(d => !isNaN(d.getTime())).map(d => d.toISOString()),
 });
 
 // ─── Property 1: Queen display contains all required fields ──────────────────

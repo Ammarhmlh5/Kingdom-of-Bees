@@ -4,7 +4,7 @@ import { DollarSign, Plus, X, TrendingUp, TrendingDown, AlertCircle } from 'luci
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFinancials, useCreateFinancialRecord } from '@/hooks/api/useFinancials';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { CreateFinancialInput } from '@/services/financials';
 
 const REVENUE_CATEGORIES = ['مبيعات عسل', 'مبيعات شمع', 'مبيعات حبوب لقاح', 'مبيعات بروبلس', 'خدمات تلقيح', 'أخرى'];
