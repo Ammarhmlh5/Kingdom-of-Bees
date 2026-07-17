@@ -38,7 +38,7 @@ export default function AddApiaryPage() {
       if (isOnline) {
         try {
           const { apiClient } = await import('@/lib/apiClient');
-          await apiClient.post('/api/apiaries', { ...apiaryData, id });
+          await apiClient.post('/apiaries', { ...apiaryData, id });
         } catch {
           await addToSyncQueue('apiaries', 'create', { ...apiaryData, id });
         }

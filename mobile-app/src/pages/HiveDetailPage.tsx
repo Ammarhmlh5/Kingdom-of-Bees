@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Stethoscope, Bug, Droplets, Merge, Crown, Grid2X2, ArrowRight, Loader2 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Card } from '@/components/ui/Card';
@@ -9,6 +9,8 @@ import type { Hive } from '@/types';
 export default function HiveDetailPage() {
   const { id: hiveId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const apiaryId = (location.state as any)?.apiaryId;
   const [hive, setHive] = useState<Hive | null>(null);
   const [inspections, setInspections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,13 +22,19 @@ export default function HiveDetailPage() {
   const loadHive = async () => {
     setLoading(true);
     try {
-      const { data } = await apiClient.get(`/hives/${hiveId}`);
-      setHive(data.data || data);
-      try {
-        const inspRes = await apiClient.get(`/hives/${hiveId}/inspections`);
-        setInspections((inspRes.data.data || inspRes.data || []).slice(0, 3));
-      } catch {
-        // ignore
+      if (apiaryId) {
+        const { data } = await apiClient.get(`/apiaries/${apiaryId}/hives/${hiveId}`);
+        setHive(data.data || data);
+        try {
+          const inspRes = await apiClient.get(`/apiaries/${apiaryId}/inspections`);
+          setInspections((inspRes.data.data || inspRes.data || []).filter((i: any) => String(i.hiveId) === String(hiveId)).slice(0, 3));
+        } catch {
+          // ignore
+        }
+      } else {
+        const { getById } = await import('@/lib/db');
+        const h = await getById<Hive>('hives', hiveId!);
+        if (h) setHive(h);
       }
     } catch {
       try {
@@ -107,7 +115,7 @@ export default function HiveDetailPage() {
         <h2 className="text-lg font-bold">إجراءات سريعة</h2>
         <div className="grid grid-cols-3 gap-3">
           {actions.map(({ icon: Icon, label, color, path }) => (
-            <Card key={path} onClick={() => navigate(path)}>
+            <Card key={path} onClick={() => navigate(path, { state: { apiaryId } })}>
               <div className="flex flex-col items-center gap-1.5 py-2">
                 <Icon size={24} className={color} />
                 <span className="text-xs font-medium">{label}</span>

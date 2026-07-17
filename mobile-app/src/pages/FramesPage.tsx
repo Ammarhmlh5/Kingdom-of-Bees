@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -25,6 +25,8 @@ interface Frame {
 export default function FramesPage() {
   const { id: hiveId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const apiaryId = (location.state as any)?.apiaryId;
   const isOnline = useOnlineStatus();
   const [frames, setFrames] = useState<Frame[]>([]);
   const [loading, setLoading] = useState(false);
@@ -32,14 +34,25 @@ export default function FramesPage() {
   useEffect(() => { loadHive(); }, [hiveId]);
 
   const loadHive = async () => {
-    try {
-      const { data } = await apiClient.get(`/hives/${hiveId}`);
-      const hive = data.data || data;
-      const count = hive.framesCount || 10;
-      setFrames(Array.from({ length: count }, (_, i) => ({
-        position: i + 1, type: 'foundation', broodPercent: 0, honeyPercent: 0, pollenPercent: 0,
-      })));
-    } catch {
+    if (apiaryId) {
+      try {
+        const { data } = await apiClient.get(`/apiaries/${apiaryId}/hives/${hiveId}`);
+        const hive = data.data || data;
+        const count = hive.framesCount || 10;
+        setFrames(Array.from({ length: count }, (_, i) => ({
+          position: i + 1, type: 'foundation', broodPercent: 0, honeyPercent: 0, pollenPercent: 0,
+        })));
+      } catch {
+        const { getById } = await import('@/lib/db');
+        const h = await getById<any>('hives', hiveId!);
+        if (h) {
+          const count = h.framesCount || 10;
+          setFrames(Array.from({ length: count }, (_, i) => ({
+            position: i + 1, type: 'foundation', broodPercent: 0, honeyPercent: 0, pollenPercent: 0,
+          })));
+        }
+      }
+    } else {
       const { getById } = await import('@/lib/db');
       const h = await getById<any>('hives', hiveId!);
       if (h) {
@@ -58,9 +71,9 @@ export default function FramesPage() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      if (isOnline) {
+      if (isOnline && apiaryId) {
         try {
-          await apiClient.put(`/hives/${hiveId}`, { framesCount: frames.length, frames });
+          await apiClient.put(`/apiaries/${apiaryId}/hives/${hiveId}/frames`, { frames });
           toast.success('تم حفظ الأطر بنجاح'); navigate(-1); return;
         } catch { /* fall through */ }
       }

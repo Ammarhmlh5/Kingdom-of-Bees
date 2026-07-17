@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, Textarea } from '@/components/ui/Input';
@@ -24,6 +24,8 @@ const DISEASES = [
 export default function DiseasePage() {
   const { id: hiveId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const apiaryId = (location.state as any)?.apiaryId;
   const isOnline = useOnlineStatus();
   const [disease, setDisease] = useState('');
   const [customDisease, setCustomDisease] = useState('');
@@ -44,16 +46,16 @@ export default function DiseasePage() {
     try {
       const data = {
         hiveId,
-        disease: diseaseName,
+        diseaseName,
         severity,
         treatment: treatment || undefined,
         notes: notes || undefined,
-        date: new Date().toISOString(),
+        dateReported: new Date().toISOString(),
       };
 
-      if (isOnline) {
+      if (isOnline && apiaryId) {
         try {
-          await apiClient.post(`/diseases`, data);
+          await apiClient.post(`/apiaries/${apiaryId}/diseases`, data);
           toast.success('تم تسجيل المرض بنجاح');
           navigate(-1);
           return;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Input';
@@ -21,6 +21,8 @@ interface FrameInput {
 export default function InspectionPage() {
   const { id: hiveId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const apiaryId = (location.state as any)?.apiaryId;
   const isOnline = useOnlineStatus();
   const [frames, setFrames] = useState<FrameInput[]>([
     { position: 1, type: 'brood', broodPercent: 0, honeyPercent: 0, pollenPercent: 0 },
@@ -65,9 +67,9 @@ export default function InspectionPage() {
         frames,
       };
 
-      if (isOnline) {
+      if (isOnline && apiaryId) {
         try {
-          await apiClient.post(`/hives/${hiveId}/inspections`, inspectionData);
+          await apiClient.post(`/apiaries/${apiaryId}/hives/${hiveId}/inspect`, inspectionData);
           toast.success('تم حفظ الفحص بنجاح');
           navigate(-1);
           return;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, Textarea } from '@/components/ui/Input';
@@ -22,6 +22,8 @@ const FEEDING_TYPES: Record<string, string> = {
 export default function FeedingPage() {
   const { id: hiveId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const apiaryId = (location.state as any)?.apiaryId;
   const isOnline = useOnlineStatus();
   const [type, setType] = useState('sugar_syrup_1_1');
   const [amount, setAmount] = useState('');
@@ -33,10 +35,16 @@ export default function FeedingPage() {
   useEffect(() => { loadHistory(); }, [hiveId]);
 
   const loadHistory = async () => {
-    try {
-      const { data } = await apiClient.get(`/hives/${hiveId}/feedings`);
-      setHistory((data.data || data || []).slice(0, 20));
-    } catch {
+    if (apiaryId) {
+      try {
+        const { data } = await apiClient.get(`/apiaries/${apiaryId}/feeding`);
+        const items = data.data || data || [];
+        setHistory(items.filter((r: any) => String(r.hiveId) === String(hiveId)).slice(0, 20));
+      } catch {
+        const records = await getAll<any>('feeding_records');
+        setHistory(records.filter(r => String(r.hiveId) === String(hiveId)).reverse());
+      }
+    } else {
       const records = await getAll<any>('feeding_records');
       setHistory(records.filter(r => String(r.hiveId) === String(hiveId)).reverse());
     }
@@ -53,9 +61,9 @@ export default function FeedingPage() {
     try {
       const data = { hiveId, type, amount, date: new Date().toISOString(), notes: notes || undefined };
 
-      if (isOnline) {
+      if (isOnline && apiaryId) {
         try {
-          await apiClient.post(`/hives/${hiveId}/feedings`, data);
+          await apiClient.post(`/apiaries/${apiaryId}/feeding`, data);
           toast.success('تم تسجيل التغذية بنجاح');
           setAmount(''); setNotes(''); setShowForm(false); loadHistory();
           return;

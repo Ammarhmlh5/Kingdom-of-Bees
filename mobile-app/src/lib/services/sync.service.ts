@@ -28,16 +28,15 @@ export class SyncService {
       const pendingItems = await getPendingSyncItems();
       for (const item of pendingItems) {
         try {
-          const endpoint = `/api/${item.table}`;
           switch (item.action) {
             case 'create':
-              await apiClient.post(endpoint, item.data);
+              await apiClient.post(`/${item.table}`, item.data);
               break;
             case 'update':
-              await apiClient.put(`${endpoint}/${item.data.id}`, item.data);
+              await apiClient.put(`/${item.table}/${item.data.id}`, item.data);
               break;
             case 'delete':
-              await apiClient.delete(`${endpoint}/${item.data.id}`);
+              await apiClient.delete(`/${item.table}/${item.data.id}`);
               break;
           }
           await markSynced(item.id);
@@ -50,7 +49,7 @@ export class SyncService {
       // Pull remote data
       for (const table of SYNC_TABLES) {
         try {
-          const { data } = await apiClient.get(`/api/${table}`);
+          const { data } = await apiClient.get(`/${table}`);
           const items = data.data || data;
           if (Array.isArray(items)) {
             for (const item of items) {

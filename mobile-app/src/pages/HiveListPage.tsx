@@ -82,7 +82,7 @@ export default function HiveListPage() {
         ) : (
           <div className="space-y-3">
             {hives.map(hive => (
-              <Card key={hive.id} onClick={() => navigate(`/hive/${hive.id}`)}>
+              <Card key={hive.id} onClick={() => navigate(`/hive/${hive.id}`, { state: { apiaryId } })}>
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <h3 className="font-bold text-base">{hive.name}</h3>

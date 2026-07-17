@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -11,6 +11,8 @@ import type { Hive } from '@/types';
 export default function MergePage() {
   const { id: hiveId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const apiaryId = (location.state as any)?.apiaryId;
   const [candidates, setCandidates] = useState<Hive[]>([]);
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,11 +26,24 @@ export default function MergePage() {
 
   const loadCandidates = async () => {
     setLoading(true);
-    try {
-      const { data } = await apiClient.get(`/hives/${hiveId}/merge-candidates`);
-      const list = data.data || data || [];
-      setCandidates(list.filter((h: any) => String(h.id) !== String(hiveId)));
-    } catch {
+    if (apiaryId) {
+      try {
+        const { data } = await apiClient.get(`/apiaries/${apiaryId}/hives/merge-candidates`);
+        const list = data.data || data || [];
+        setCandidates(list.filter((h: any) => String(h.id) !== String(hiveId)));
+      } catch {
+        try {
+          const { getAll } = await import('@/lib/db');
+          const all = await getAll<Hive>('hives');
+          const source = all.find(h => String(h.id) === String(hiveId));
+          if (source) {
+            setCandidates(all.filter(h => String(h.apiaryId) === String(source.apiaryId) && String(h.id) !== String(hiveId)));
+          }
+        } catch {
+          // ignore
+        }
+      }
+    } else {
       try {
         const { getAll } = await import('@/lib/db');
         const all = await getAll<Hive>('hives');
@@ -39,9 +54,8 @@ export default function MergePage() {
       } catch {
         // ignore
       }
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const handleMergeClick = () => {
@@ -60,7 +74,9 @@ export default function MergePage() {
     setShowConfirm(false);
     setMerging(true);
     try {
-      await apiClient.post(`/hives/${hiveId}/merge`, { targetId: selectedTarget });
+      if (apiaryId) {
+        await apiClient.post(`/apiaries/${apiaryId}/hives/${hiveId}/merge`, { targetId: selectedTarget });
+      }
       toast.success('تم دمج الخلية بنجاح');
       navigate(-1);
     } catch (err: any) {

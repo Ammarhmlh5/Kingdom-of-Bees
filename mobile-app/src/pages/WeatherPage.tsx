@@ -12,8 +12,15 @@ export default function WeatherPage() {
   useEffect(() => {
     const fetchWeather = async () => {
       try {
-        const { data } = await apiClient.get('/weather/current');
-        setWeather(data.data || data);
+        const { data: apiaries } = await apiClient.get('/apiaries');
+        const list = Array.isArray(apiaries) ? apiaries : (apiaries.data || []);
+        if (list.length > 0) {
+          const apiaryId = list[0].id;
+          const { data } = await apiClient.get(`/weather/current/${apiaryId}`);
+          setWeather(data.data || data);
+        } else {
+          setError(true);
+        }
       } catch {
         setError(true);
       } finally {

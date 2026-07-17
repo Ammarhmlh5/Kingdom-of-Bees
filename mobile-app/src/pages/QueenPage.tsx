@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, Textarea } from '@/components/ui/Input';
@@ -24,6 +24,8 @@ const STATUS_COLORS: Record<string, string> = {
 export default function QueenPage() {
   const { id: hiveId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const apiaryId = (location.state as any)?.apiaryId;
   const isOnline = useOnlineStatus();
   const [batches, setBatches] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -35,10 +37,16 @@ export default function QueenPage() {
   useEffect(() => { loadBatches(); }, [hiveId]);
 
   const loadBatches = async () => {
-    try {
-      const { data } = await apiClient.get(`/hives/${hiveId}/queens`);
-      setBatches((data.data || data || []).reverse());
-    } catch {
+    if (apiaryId) {
+      try {
+        const { data } = await apiClient.get(`/apiaries/${apiaryId}/queens`);
+        const items = data.data || data || [];
+        setBatches(items.filter((b: any) => String(b.hiveId) === String(hiveId)).reverse());
+      } catch {
+        const all = await getAll<any>('queen_batches');
+        setBatches(all.filter(b => String(b.hiveId) === String(hiveId)).reverse());
+      }
+    } else {
       const all = await getAll<any>('queen_batches');
       setBatches(all.filter(b => String(b.hiveId) === String(hiveId)).reverse());
     }
@@ -49,9 +57,9 @@ export default function QueenPage() {
     setLoading(true);
     try {
       const data = { type, status: 'pending', startDate: new Date().toISOString(), cellsCount: Number(cellsCount), notes: notes || undefined };
-      if (isOnline) {
+      if (isOnline && apiaryId) {
         try {
-          await apiClient.post(`/hives/${hiveId}/queens`, data);
+          await apiClient.post(`/apiaries/${apiaryId}/queens`, { ...data, hiveId });
           toast.success('تم إنشاء دفعة الملكات'); setShowForm(false); setCellsCount('10'); setNotes(''); loadBatches();
           return;
         } catch { /* fall through */ }
