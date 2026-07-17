@@ -36,7 +36,7 @@ export class QueensController {
     async deleteQueen(req: Request, res: Response) {
         try {
             const apiaryId = (req as AuthenticatedRequest).apiaryId!;
-            const { queenId } = req.params;
+            const queenId = req.params.queenId as string;
             await queensService.deleteQueen(queenId, apiaryId);
             ApiResponse.success(res, null, 'تم حذف الملكة بنجاح');
         } catch (error) {

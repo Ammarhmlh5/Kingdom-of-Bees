@@ -32,7 +32,7 @@ export class HiveController {
     async getDetails(req: Request, res: Response) {
         try {
             const apiaryId = (req as AuthenticatedRequest).apiaryId!;
-            const { hiveId } = req.params;
+            const hiveId = req.params.hiveId as string;
             const userId = (req as AuthenticatedRequest).user!.id;
 
             const { hasAccess } = await hasApiaryAccess(userId, apiaryId);
@@ -83,7 +83,7 @@ export class HiveController {
     async update(req: Request, res: Response) {
         try {
             const apiaryId = (req as AuthenticatedRequest).apiaryId!;
-            const { hiveId } = req.params;
+            const hiveId = req.params.hiveId as string;
             const userId = (req as AuthenticatedRequest).user!.id;
 
             const { hasAccess } = await hasApiaryAccess(userId, apiaryId);
@@ -101,7 +101,7 @@ export class HiveController {
     async delete(req: Request, res: Response) {
         try {
             const apiaryId = (req as AuthenticatedRequest).apiaryId!;
-            const { hiveId } = req.params;
+            const hiveId = req.params.hiveId as string;
             const userId = (req as AuthenticatedRequest).user!.id;
 
             const { hasAccess } = await hasApiaryAccess(userId, apiaryId);
@@ -121,7 +121,7 @@ export class HiveController {
     async updateFrames(req: Request, res: Response) {
         try {
             const apiaryId = (req as AuthenticatedRequest).apiaryId!;
-            const { hiveId } = req.params;
+            const hiveId = req.params.hiveId as string;
             const { frames } = req.body; // Array of frame objects
             const userId = (req as AuthenticatedRequest).user!.id;
 
@@ -142,7 +142,7 @@ export class HiveController {
     async getFrames(req: Request, res: Response) {
         try {
             const apiaryId = (req as AuthenticatedRequest).apiaryId!;
-            const { hiveId } = req.params;
+            const hiveId = req.params.hiveId as string;
             const userId = (req as AuthenticatedRequest).user!.id;
 
             logger.info(`[HiveController] getFrames called - apiaryId: ${apiaryId}, hiveId: ${hiveId}`);
@@ -168,7 +168,7 @@ export class HiveController {
     async setup(req: Request, res: Response) {
         try {
             const apiaryId = (req as AuthenticatedRequest).apiaryId!;
-            const { hiveId } = req.params;
+            const hiveId = req.params.hiveId as string;
             const userId = (req as AuthenticatedRequest).user!.id;
 
             const { hasAccess } = await hasApiaryAccess(userId, apiaryId);
@@ -187,7 +187,7 @@ export class HiveController {
         logger.info(`[HiveController] Split Request:`, req.params, req.body);
         try {
             const apiaryId = (req as AuthenticatedRequest).apiaryId!;
-            const { hiveId } = req.params;
+            const hiveId = req.params.hiveId as string;
             const userId = (req as AuthenticatedRequest).user!.id;
 
             const { hasAccess } = await hasApiaryAccess(userId, apiaryId);
@@ -205,7 +205,7 @@ export class HiveController {
     async merge(req: Request, res: Response) {
         try {
             const apiaryId = (req as AuthenticatedRequest).apiaryId!;
-            const { hiveId } = req.params;
+            const hiveId = req.params.hiveId as string;
             const userId = (req as AuthenticatedRequest).user!.id;
 
             const { hasAccess } = await hasApiaryAccess(userId, apiaryId);
@@ -223,7 +223,7 @@ export class HiveController {
     async addSuper(req: Request, res: Response) {
         try {
             const apiaryId = (req as AuthenticatedRequest).apiaryId!;
-            const { hiveId } = req.params;
+            const hiveId = req.params.hiveId as string;
             const userId = (req as AuthenticatedRequest).user!.id;
 
             const { hasAccess } = await hasApiaryAccess(userId, apiaryId);

@@ -50,7 +50,7 @@ export class AlertController {
   async getById(req: Request, res: Response) {
     try {
       const user = (req as AuthenticatedRequest).user as AuthUser;
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const alert = await alertService.getAlertById(id, user.id);
       ApiResponse.success(res, alert);
@@ -83,7 +83,7 @@ export class AlertController {
   async acknowledge(req: Request, res: Response) {
     try {
       const user = (req as AuthenticatedRequest).user as AuthUser;
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const result = await alertService.updateAlertStatus(id, 'ACKNOWLEDGED', user.id);
       updateDashboardStats(user.id).catch((err) => logger.error('Dashboard stats update failed:', err));
@@ -96,7 +96,7 @@ export class AlertController {
   async dismiss(req: Request, res: Response) {
     try {
       const user = (req as AuthenticatedRequest).user as AuthUser;
-      const { id } = req.params;
+      const id = req.params.id as string;
       const result = await alertService.updateAlertStatus(id, 'DISMISSED');
       updateDashboardStats(user.id).catch((err) => logger.error('Dashboard stats update failed:', err));
       ApiResponse.success(res, result, 'تم تجاهل التنبيه');
@@ -107,7 +107,7 @@ export class AlertController {
 
   async resolve(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const result = await alertService.updateAlertStatus(id, 'RESOLVED');
       ApiResponse.success(res, result, 'تم حل التنبيه');
     } catch (error) {
@@ -129,7 +129,7 @@ export class AlertController {
 
   async remove(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       await alertService.deleteAlert(id);
       ApiResponse.success(res, null, 'تم حذف التنبيه');
     } catch (error) {

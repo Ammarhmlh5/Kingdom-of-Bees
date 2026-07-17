@@ -14,9 +14,16 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": ["./src/*"],
+      "react-native": ["./node_modules/react-native-web"],
+      "react-native-web": ["./node_modules/react-native-web"]
+    },
+    "typeRoots": ["./node_modules/@types", "./node_modules/nativewind/types"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "nativewind-env.d.ts"
+  ],
   "exclude": ["node_modules"]
 }

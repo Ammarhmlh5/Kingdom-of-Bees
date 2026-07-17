@@ -82,7 +82,7 @@ export class HiveTemplateController {
 
   async delete(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const userId = (req as AuthenticatedRequest).user?.id;
       const template = await prisma.hiveTemplate.findFirst({
         where: { id, createdBy: userId },

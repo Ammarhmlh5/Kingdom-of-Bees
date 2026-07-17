@@ -20,7 +20,7 @@ export class AdminDiseaseController {
 
     async getDiseaseById(req: Request, res: Response) {
         try {
-            const disease = await adminDiseaseService.getDiseaseById(req.params.id);
+            const disease = await adminDiseaseService.getDiseaseById(req.params.id as string);
             if (!disease) return ApiResponse.error(res, 'Disease not found', 404);
             ApiResponse.success(res, disease);
         } catch (error) {
@@ -40,7 +40,7 @@ export class AdminDiseaseController {
 
     async updateDisease(req: Request, res: Response) {
         try {
-            const disease = await adminDiseaseService.updateDisease(req.params.id, req.body);
+            const disease = await adminDiseaseService.updateDisease(req.params.id as string, req.body);
             ApiResponse.success(res, disease);
         } catch (error) {
             ApiResponse.error(res, 'Failed to update disease', 400);
@@ -49,7 +49,7 @@ export class AdminDiseaseController {
 
     async deleteDisease(req: Request, res: Response) {
         try {
-            await adminDiseaseService.deleteDisease(req.params.id);
+            await adminDiseaseService.deleteDisease(req.params.id as string);
             ApiResponse.success(res, null);
         } catch (error) {
             ApiResponse.error(res, 'Failed to delete disease', 400);
@@ -62,7 +62,7 @@ export class AdminDiseaseController {
 
     async getTreatmentsByDisease(req: Request, res: Response) {
         try {
-            const treatments = await adminDiseaseService.getTreatmentsByDisease(req.params.diseaseId);
+            const treatments = await adminDiseaseService.getTreatmentsByDisease(req.params.diseaseId as string);
             ApiResponse.success(res, treatments);
         } catch (error) {
             ApiResponse.error(res, 'Failed to fetch treatments', 500);
@@ -71,7 +71,7 @@ export class AdminDiseaseController {
 
     async createTreatment(req: Request, res: Response) {
         try {
-            const treatment = await adminDiseaseService.createTreatment(req.params.diseaseId, req.body);
+            const treatment = await adminDiseaseService.createTreatment(req.params.diseaseId as string, req.body);
             ApiResponse.created(res, treatment);
         } catch (error) {
             logger.error('Error creating treatment:', error);
@@ -81,7 +81,7 @@ export class AdminDiseaseController {
 
     async updateTreatment(req: Request, res: Response) {
         try {
-            const treatment = await adminDiseaseService.updateTreatment(req.params.id, req.body);
+            const treatment = await adminDiseaseService.updateTreatment(req.params.id as string, req.body);
             ApiResponse.success(res, treatment);
         } catch (error) {
             ApiResponse.error(res, 'Failed to update treatment', 400);
@@ -90,7 +90,7 @@ export class AdminDiseaseController {
 
     async deleteTreatment(req: Request, res: Response) {
         try {
-            await adminDiseaseService.deleteTreatment(req.params.id);
+            await adminDiseaseService.deleteTreatment(req.params.id as string);
             ApiResponse.success(res, null);
         } catch (error) {
             ApiResponse.error(res, 'Failed to delete treatment', 400);

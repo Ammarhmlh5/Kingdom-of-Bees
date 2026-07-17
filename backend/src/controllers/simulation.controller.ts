@@ -11,7 +11,7 @@ export class SimulationController {
    */
   async runSimulation(req: Request, res: Response) {
     try {
-      const { apiaryId } = req.params;
+      const apiaryId = req.params.apiaryId as string;
       const userId = (req as AuthenticatedRequest).user?.id;
 
       if (!userId) {

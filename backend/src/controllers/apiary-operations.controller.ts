@@ -24,7 +24,7 @@ export class ApiaryOperationsController {
     async updateOperation(req: Request, res: Response) {
         try {
             const apiaryId = (req as AuthenticatedRequest).apiaryId!;
-            const { operationId } = req.params;
+            const operationId = req.params.operationId as string;
             const { description, operationDate, data: extraData } = req.body;
 
             const result = await apiaryOperationsRepository.updateOperation(operationId, apiaryId, {
@@ -43,7 +43,7 @@ export class ApiaryOperationsController {
     async deleteOperation(req: Request, res: Response) {
         try {
             const apiaryId = (req as AuthenticatedRequest).apiaryId!;
-            const { operationId } = req.params;
+            const operationId = req.params.operationId as string;
 
             const result = await apiaryOperationsRepository.deleteOperation(operationId, apiaryId);
             if (!result) {

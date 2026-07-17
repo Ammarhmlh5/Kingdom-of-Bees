@@ -11,7 +11,7 @@ export class MergeController {
    */
   async getMergeCandidates(req: Request, res: Response) {
     try {
-      const { apiaryId } = req.params;
+      const apiaryId = req.params.apiaryId as string;
       const { season } = req.query;
       const userId = (req as AuthenticatedRequest).user?.id;
 
@@ -42,7 +42,8 @@ export class MergeController {
    */
   async executeMerge(req: Request, res: Response) {
     try {
-      const { apiaryId, hiveId } = req.params;
+      const apiaryId = req.params.apiaryId as string;
+      const hiveId = req.params.hiveId as string;
       const userId = (req as AuthenticatedRequest).user?.id;
 
       if (!userId) {

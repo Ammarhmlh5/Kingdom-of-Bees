@@ -51,7 +51,7 @@ export class ApiaryController {
     async getDetails(req: Request, res: Response) {
         try {
             const user = (req as AuthenticatedRequest).user as AuthUser;
-            const { apiaryId } = req.params;
+            const apiaryId = req.params.apiaryId as string;
 
             const { hasAccess } = await hasApiaryAccess(user.id, apiaryId);
             if (!hasAccess) {
@@ -86,7 +86,7 @@ export class ApiaryController {
     async update(req: Request, res: Response) {
         try {
             const user = (req as AuthenticatedRequest).user as AuthUser;
-            const { apiaryId } = req.params;
+            const apiaryId = req.params.apiaryId as string;
 
             const { hasAccess, role } = await hasApiaryAccess(user.id, apiaryId);
             if (!hasAccess) {
@@ -106,7 +106,7 @@ export class ApiaryController {
     async delete(req: Request, res: Response) {
         try {
             const user = (req as AuthenticatedRequest).user as AuthUser;
-            const { apiaryId } = req.params;
+            const apiaryId = req.params.apiaryId as string;
 
             const { hasAccess, role } = await hasApiaryAccess(user.id, apiaryId);
             if (!hasAccess) {
@@ -138,7 +138,7 @@ export class ApiaryController {
     async getApiaryStats(req: Request, res: Response) {
         try {
             const user = (req as AuthenticatedRequest).user as AuthUser;
-            const { apiaryId } = req.params;
+            const apiaryId = req.params.apiaryId as string;
             const stats = await apiaryService.getApiaryStats(user.id, apiaryId);
             res.json(stats);
         } catch (error) {
@@ -153,7 +153,7 @@ export class ApiaryController {
     async getWeather(req: Request, res: Response) {
         try {
             const user = (req as AuthenticatedRequest).user as AuthUser;
-            const { apiaryId } = req.params;
+            const apiaryId = req.params.apiaryId as string;
             const weather = await apiaryService.getWeather(user.id, apiaryId);
             ApiResponse.success(res, weather, 'تم جلب بيانات الطقس بنجاح');
         } catch (error) {

@@ -6,7 +6,7 @@ import { ApiResponse } from '../utils/response';
 
 export const getMembers = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { apiaryId } = req.params;
+    const apiaryId = req.params.apiaryId as string;
     const userId = (req as AuthenticatedRequest).user!.id;
 
     const { hasAccess, role } = await hasApiaryAccess(userId, apiaryId);
@@ -22,12 +22,12 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
     const apiary = await prisma.apiary.findUnique({
       where: { id: apiaryId },
       include: { owner: { select: { id: true, fullName: true, email: true } } },
-    });
+    }) as { owner: { id: string; fullName: string; email: string } } | null;
 
     const memberships = await prisma.apiaryMembership.findMany({
       where: { apiaryId, status: 'ACTIVE' },
       include: { user: { select: { id: true, fullName: true, email: true } } },
-    });
+    }) as ({ user: { id: string; fullName: string; email: string }; joinedAt: Date | null })[];
 
     const members = [
       {
@@ -54,7 +54,7 @@ export const getMembers = async (req: Request, res: Response): Promise<void> => 
 
 export const inviteMember = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { apiaryId } = req.params;
+    const apiaryId = req.params.apiaryId as string;
     const userId = (req as AuthenticatedRequest).user!.id;
     const { email } = req.body;
 
@@ -123,7 +123,8 @@ export const inviteMember = async (req: Request, res: Response): Promise<void> =
 
 export const removeMember = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { apiaryId, memberId } = req.params;
+    const apiaryId = req.params.apiaryId as string;
+    const memberId = req.params.memberId as string;
     const userId = (req as AuthenticatedRequest).user!.id;
 
     const { hasAccess, role } = await hasApiaryAccess(userId, apiaryId);

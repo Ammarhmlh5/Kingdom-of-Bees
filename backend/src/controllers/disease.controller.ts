@@ -55,7 +55,7 @@ export class DiseaseController {
     async resolve(req: Request, res: Response) {
         try {
             const apiaryId = (req as AuthenticatedRequest).apiaryId!;
-            const { recordId } = req.params;
+            const recordId = req.params.recordId as string;
             const { outcome } = req.body;
 
             const result = await service.resolveDisease(apiaryId, recordId, outcome);
@@ -84,7 +84,7 @@ export class DiseaseController {
     async deleteDisease(req: Request, res: Response) {
         try {
             const apiaryId = (req as AuthenticatedRequest).apiaryId!;
-            const { recordId } = req.params;
+            const recordId = req.params.recordId as string;
             await service.deleteDiseaseRecord(apiaryId, recordId);
             ApiResponse.success(res, null);
         } catch (error) {

@@ -51,7 +51,7 @@ export class FinancialsController {
                 return ApiResponse.forbidden(res, 'غير مصرح: هذه الصفحة للمالك فقط');
             }
             const apiaryId = (req as AuthenticatedRequest).apiaryId!;
-            const { recordId } = req.params;
+            const recordId = req.params.recordId as string;
             await financialsService.deleteRecord(recordId, apiaryId);
             ApiResponse.success(res, null, 'تم حذف السجل المالي بنجاح');
         } catch (error) {

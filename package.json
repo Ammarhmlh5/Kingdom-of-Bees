@@ -3,10 +3,29 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "backend",
+    "frontend-web",
+    "admin-panel",
+    "mobile-app"
   ],
+  "scripts": {
+    "build": "turbo run build",
+    "build:nx": "nx run-many -t build",
+    "dev": "turbo run dev",
+    "dev:nx": "nx run-many -t dev",
+    "lint": "turbo run lint",
+    "lint:nx": "nx run-many -t lint",
+    "test": "turbo run test",
+    "test:nx": "nx run-many -t test",
+    "typecheck": "turbo run typecheck",
+    "typecheck:nx": "nx run-many -t typecheck",
+    "graph": "nx graph"
+  },
   "devDependencies": {
-    "prisma": "^5.22.0"
+    "nx": "^23.1.0",
+    "prisma": "^5.22.0",
+    "turbo": "^2.10.5"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0"

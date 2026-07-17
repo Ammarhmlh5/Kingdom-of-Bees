@@ -24,7 +24,7 @@ export class InspectionSettingController {
    */
   async getByType(req: Request, res: Response) {
     try {
-      const { type } = req.params;
+      const type = req.params.type as string;
       const setting = await inspectionSettingService.getByType(type);
       
       if (!setting) {
@@ -73,7 +73,7 @@ export class InspectionSettingController {
    */
   async update(req: Request, res: Response) {
     try {
-      const { type } = req.params;
+      const type = req.params.type as string;
       const { nameAr, minInterval, maxInterval, isActive, description } = req.body;
       
       const setting = await inspectionSettingService.update(type, {
@@ -97,7 +97,7 @@ export class InspectionSettingController {
    */
   async deactivate(req: Request, res: Response) {
     try {
-      const { type } = req.params;
+      const type = req.params.type as string;
       await inspectionSettingService.deactivate(type);
       
       ApiResponse.success(res, null, 'تم تعطيل الإعداد بنجاح');

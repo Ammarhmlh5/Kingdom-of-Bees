@@ -1,0 +1,50 @@
+{
+  "name": "@kingdom-of-bees/simulation",
+  "version": "0.1.0",
+  "description": "مكتبة المحاكاة والتنبؤ والنمو البيولوجي - حسابات نمو النحل وتوقع الكثافة بناءً على علوم أحياء ورياضيات ثابتة",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "dev": "rollup -c -w",
+    "build": "rollup -c",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "sideEffects": false,
+  "keywords": [
+    "beekeeping",
+    "simulation",
+    "colony-dynamics",
+    "population-model",
+    "bee-growth",
+    "foraging",
+    "honey-bee",
+    "apis-mellifera",
+    "agent-based-model",
+    "typescript"
+  ],
+  "author": "Kingdom of Bees",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.5",
+    "@types/jest": "^29.5.11",
+    "jest": "^29.7.0",
+    "prettier": "^3.1.1",
+    "rollup": "^4.9.1",
+    "rollup-plugin-peer-deps-external": "^2.2.4",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.3.3"
+  }
+}

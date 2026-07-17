@@ -10,7 +10,7 @@ export class InspectionScheduleController {
    */
   async getByHiveId(req: Request, res: Response) {
     try {
-      const { hiveId } = req.params;
+      const hiveId = req.params.hiveId as string;
       const schedules = await inspectionScheduleService.getByHiveId(hiveId);
       
       ApiResponse.success(res, schedules);
@@ -26,7 +26,7 @@ export class InspectionScheduleController {
    */
   async getByApiaryId(req: Request, res: Response) {
     try {
-      const { apiaryId } = req.params;
+      const apiaryId = req.params.apiaryId as string;
       const schedules = await inspectionScheduleService.getAll(apiaryId);
       
       ApiResponse.success(res, schedules);
@@ -100,7 +100,7 @@ export class InspectionScheduleController {
    */
   async complete(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const schedule = await inspectionScheduleService.complete(id);
       
       ApiResponse.success(res, schedule, 'تم تحديد الفحص كمكتمل');
@@ -116,7 +116,7 @@ export class InspectionScheduleController {
    */
   async cancel(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const schedule = await inspectionScheduleService.cancel(id);
       
       ApiResponse.success(res, schedule, 'تم إلغاء الجدول');
@@ -132,7 +132,7 @@ export class InspectionScheduleController {
    */
   async delete(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       await inspectionScheduleService.delete(id);
       
       ApiResponse.success(res, null, 'تم حذف الجدول');

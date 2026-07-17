@@ -11,7 +11,7 @@ export class ApiaryMetricsController {
      */
     async getMetrics(req: Request, res: Response) {
         try {
-            const { apiaryId } = req.params;
+            const apiaryId = req.params.apiaryId as string;
             const userId = (req as AuthenticatedRequest).user?.id;
 
             if (!userId) {
@@ -47,7 +47,7 @@ export class ApiaryMetricsController {
      */
     async calculateMetrics(req: Request, res: Response) {
         try {
-            const { apiaryId } = req.params;
+            const apiaryId = req.params.apiaryId as string;
             const userId = (req as AuthenticatedRequest).user?.id;
 
             if (!userId) {
@@ -73,7 +73,7 @@ export class ApiaryMetricsController {
      */
     async getMetricsHistory(req: Request, res: Response) {
         try {
-            const { apiaryId } = req.params;
+            const apiaryId = req.params.apiaryId as string;
             const { days } = req.query;
             const userId = (req as AuthenticatedRequest).user?.id;
 

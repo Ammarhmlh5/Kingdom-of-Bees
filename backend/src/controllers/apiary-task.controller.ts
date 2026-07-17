@@ -12,7 +12,7 @@ export class ApiaryTaskController {
      */
     async getTasks(req: Request, res: Response) {
         try {
-            const { apiaryId } = req.params;
+            const apiaryId = req.params.apiaryId as string;
             const { status, taskType, hiveId, assignedToId, overdue } = req.query;
             const userId = (req as AuthenticatedRequest).user?.id;
 
@@ -43,7 +43,7 @@ export class ApiaryTaskController {
      */
     async getTaskById(req: Request, res: Response) {
         try {
-            const { taskId } = req.params;
+            const taskId = req.params.taskId as string;
             const userId = (req as AuthenticatedRequest).user?.id;
 
             if (!userId) {
@@ -70,7 +70,7 @@ export class ApiaryTaskController {
      */
     async createTask(req: Request, res: Response) {
         try {
-            const { apiaryId } = req.params;
+            const apiaryId = req.params.apiaryId as string;
             const userId = (req as AuthenticatedRequest).user?.id;
 
             if (!userId) {
@@ -112,7 +112,7 @@ export class ApiaryTaskController {
      */
     async updateTask(req: Request, res: Response) {
         try {
-            const { taskId } = req.params;
+            const taskId = req.params.taskId as string;
             const userId = (req as AuthenticatedRequest).user?.id;
 
             if (!userId) {
@@ -149,7 +149,7 @@ export class ApiaryTaskController {
      */
     async completeTask(req: Request, res: Response) {
         try {
-            const { taskId } = req.params;
+            const taskId = req.params.taskId as string;
             const userId = (req as AuthenticatedRequest).user?.id;
 
             if (!userId) {
@@ -176,7 +176,7 @@ export class ApiaryTaskController {
      */
     async deleteTask(req: Request, res: Response) {
         try {
-            const { taskId } = req.params;
+            const taskId = req.params.taskId as string;
             const userId = (req as AuthenticatedRequest).user?.id;
 
             if (!userId) {
@@ -203,7 +203,7 @@ export class ApiaryTaskController {
      */
     async getTaskStats(req: Request, res: Response) {
         try {
-            const { apiaryId } = req.params;
+            const apiaryId = req.params.apiaryId as string;
             const userId = (req as AuthenticatedRequest).user?.id;
 
             if (!userId) {
@@ -225,7 +225,7 @@ export class ApiaryTaskController {
      */
     async generateInspectionTasks(req: Request, res: Response) {
         try {
-            const { apiaryId } = req.params;
+            const apiaryId = req.params.apiaryId as string;
             const userId = (req as AuthenticatedRequest).user?.id;
 
             if (!userId) {

@@ -16,7 +16,7 @@ export class WeatherController {
                 return ApiResponse.unauthorized(res);
             }
 
-            const { apiaryId } = req.params;
+            const apiaryId = req.params.apiaryId as string;
 
             const weather = await prisma.weatherData.findFirst({
                 where: { apiaryId },
@@ -45,7 +45,7 @@ export class WeatherController {
                 return ApiResponse.unauthorized(res);
             }
 
-            const { apiaryId } = req.params;
+            const apiaryId = req.params.apiaryId as string;
             const days = parseInt(req.query.days as string) || 7;
 
             const forecasts = await prisma.weatherData.findMany({

@@ -25,6 +25,7 @@ import HarvestPage from '@/pages/HarvestPage';
 import AlertsPage from '@/pages/AlertsPage';
 import TeamPage from '@/pages/TeamPage';
 import HealthPage from '@/pages/HealthPage';
+import { BeeCounterPage } from '@/pages/BeeCounterPage';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -67,6 +68,7 @@ export default function App() {
         <Route path="/alerts" element={<AppLayout><AlertsPage /></AppLayout>} />
         <Route path="/apiary/:id/team" element={<AppLayout><TeamPage /></AppLayout>} />
         <Route path="/apiary/:id/health" element={<AppLayout><HealthPage /></AppLayout>} />
+        <Route path="/bee-counter" element={<BeeCounterPage />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

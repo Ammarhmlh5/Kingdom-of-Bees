@@ -10,8 +10,8 @@ export class AssessmentController {
      */
     async recordFlightAssessment(req: Request, res: Response) {
         try {
-            const { hiveId } = req.params;
-            const apiaryId = (req as AuthenticatedRequest).apiaryId || req.params.apiaryId;
+            const hiveId = req.params.hiveId as string;
+            const apiaryId = (req as AuthenticatedRequest).apiaryId || (req.params.apiaryId as string);
             const userId = (req as AuthenticatedRequest).user?.id;
 
             if (!userId) {
@@ -41,8 +41,8 @@ export class AssessmentController {
      */
     async recordPollenAssessment(req: Request, res: Response) {
         try {
-            const { hiveId } = req.params;
-            const apiaryId = (req as AuthenticatedRequest).apiaryId || req.params.apiaryId;
+            const hiveId = req.params.hiveId as string;
+            const apiaryId = (req as AuthenticatedRequest).apiaryId || (req.params.apiaryId as string);
             const userId = (req as AuthenticatedRequest).user?.id;
 
             if (!userId) {
@@ -72,7 +72,7 @@ export class AssessmentController {
      */
     async recordWeatherData(req: Request, res: Response) {
         try {
-            const apiaryId = (req as AuthenticatedRequest).apiaryId || req.params.apiaryId;
+            const apiaryId = (req as AuthenticatedRequest).apiaryId || (req.params.apiaryId as string);
             const userId = (req as AuthenticatedRequest).user?.id;
 
             if (!userId) {
@@ -101,7 +101,7 @@ export class AssessmentController {
      */
     async recordAutoWeatherData(req: Request, res: Response) {
         try {
-            const apiaryId = (req as AuthenticatedRequest).apiaryId || req.params.apiaryId;
+            const apiaryId = (req as AuthenticatedRequest).apiaryId || (req.params.apiaryId as string);
             const userId = (req as AuthenticatedRequest).user?.id;
 
             if (!userId) {

@@ -5,7 +5,7 @@ import { ApiResponse } from '../utils/response';
 
 export const getApiaryAnalytics = async (req: Request, res: Response) => {
     try {
-        const { apiaryId } = req.params;
+        const apiaryId = req.params.apiaryId as string;
         const { hiveId } = req.query;
 
         const summary = await analyticsMatchingService.getAnalyticsSummary(

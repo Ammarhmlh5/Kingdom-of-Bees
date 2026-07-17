@@ -23,7 +23,7 @@ export class PlantController {
 
   async listByApiary(req: Request, res: Response) {
     try {
-      const { apiaryId } = req.params;
+      const apiaryId = req.params.apiaryId as string;
       const plants = await plantService.getApiaryPlants(apiaryId);
       return ApiResponse.success(res, plants);
     } catch (error) {
@@ -33,7 +33,7 @@ export class PlantController {
 
   async add(req: Request, res: Response) {
     try {
-      const { apiaryId } = req.params;
+      const apiaryId = req.params.apiaryId as string;
       const user = (req as AuthenticatedRequest).user;
       const parsed = addLocalPlantSchema.parse(req.body);
       const plant = await plantService.addLocalPlant(apiaryId, {
@@ -51,7 +51,7 @@ export class PlantController {
 
   async update(req: Request, res: Response) {
     try {
-      const { apiaryId, plantId } = req.params;
+      const { apiaryId, plantId } = req.params as Record<string, string>;
       const parsed = updateLocalPlantSchema.parse(req.body);
       const plant = await plantService.updateLocalPlant(plantId, apiaryId, parsed);
       return ApiResponse.success(res, plant, 'تم تحديث بيانات النبات');
@@ -65,7 +65,7 @@ export class PlantController {
 
   async remove(req: Request, res: Response) {
     try {
-      const { apiaryId, plantId } = req.params;
+      const { apiaryId, plantId } = req.params as Record<string, string>;
       await plantService.removeLocalPlant(plantId, apiaryId);
       return ApiResponse.success(res, null, 'تم حذف النبات من المنحل');
     } catch (error) {

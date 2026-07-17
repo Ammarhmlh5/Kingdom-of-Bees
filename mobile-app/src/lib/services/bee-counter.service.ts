@@ -1,0 +1,117 @@
+import { apiClient } from './apiClient';
+
+export interface BeeDetection {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  confidence: number;
+  class: string;
+}
+
+export interface BeeCountResult {
+  count: number;
+  detections: BeeDetection[];
+  confidence: number;
+  timestamp: string;
+}
+
+export interface RoboflowConfig {
+  apiKey: string;
+  modelId: string;
+  apiUrl?: string;
+}
+
+const DEFAULT_CONFIG: RoboflowConfig = {
+  apiKey: '',
+  modelId: 'bees-tbdsg/bee-counting',
+  apiUrl: 'https://serverless.roboflow.com',
+};
+
+export class BeeCounterService {
+  private config: RoboflowConfig;
+
+  constructor(config: Partial<RoboflowConfig> = {}) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
+  }
+
+  async countBeesFromImage(imageBase64: string): Promise<BeeCountResult> {
+    try {
+      const response = await fetch(
+        `${this.config.apiUrl}/${this.config.modelId}?api_key=${this.config.apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: imageBase64,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const detections: BeeDetection[] = data.predictions || [];
+
+      return {
+        count: detections.length,
+        detections,
+        confidence: this.calculateAverageConfidence(detections),
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error('Bee counting failed:', error);
+      throw error;
+    }
+  }
+
+  async countBeesFromUrl(imageUrl: string): Promise<BeeCountResult> {
+    try {
+      const response = await fetch(
+        `${this.config.apiUrl}/${this.config.modelId}?api_key=${this.config.apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: imageUrl,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const detections: BeeDetection[] = data.predictions || [];
+
+      return {
+        count: detections.length,
+        detections,
+        confidence: this.calculateAverageConfidence(detections),
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error('Bee counting failed:', error);
+      throw error;
+    }
+  }
+
+  private calculateAverageConfidence(detections: BeeDetection[]): number {
+    if (detections.length === 0) return 0;
+    const total = detections.reduce((sum, d) => sum + d.confidence, 0);
+    return total / detections.length;
+  }
+
+  static create(config: Partial<RoboflowConfig>): BeeCounterService {
+    return new BeeCounterService(config);
+  }
+}
+
+export const beeCounter = new BeeCounterService();

@@ -80,7 +80,7 @@ export class OperationsController {
    */
   async deleteOperation(req: Request, res: Response) {
     try {
-      const { operationId } = req.params;
+      const operationId = req.params.operationId as string;
       const userId = (req as AuthenticatedRequest).user?.id;
 
       if (!userId) {

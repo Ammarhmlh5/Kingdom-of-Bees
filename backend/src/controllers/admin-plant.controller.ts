@@ -28,7 +28,7 @@ export class AdminPlantController {
 
   async get(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const plant = await service.getPlant(id);
       return ApiResponse.success(res, plant);
     } catch (error: any) {
@@ -51,7 +51,7 @@ export class AdminPlantController {
 
   async update(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const parsed = updatePlantSchema.parse(req.body);
       const plant = await service.updatePlant(id, parsed);
       return ApiResponse.success(res, plant, 'تم تحديث النبتة');
@@ -65,7 +65,7 @@ export class AdminPlantController {
 
   async delete(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       await service.deletePlant(id);
       return ApiResponse.success(res, null, 'تم حذف النبتة');
     } catch (error: any) {
@@ -75,7 +75,7 @@ export class AdminPlantController {
 
   async verify(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const user = (req as AuthenticatedRequest).user;
       const plant = await service.verifyPlant(id, user?.id || '');
       return ApiResponse.success(res, plant, plant.verified ? 'تم توثيق النبتة' : 'تم إلغاء توثيق النبتة');
