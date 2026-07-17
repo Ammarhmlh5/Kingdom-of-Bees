@@ -1,4 +1,4 @@
-import { openDB, type IDBPDatabase } from 'idb';
+﻿import { openDB, type IDBPDatabase } from 'idb';
 
 const DB_NAME = 'kingdom-of-bees';
 const DB_VERSION = 1;
@@ -11,6 +11,7 @@ const SCHEMA = {
   feeding_records: '++id, hiveId, date',
   harvest_records: '++id, hiveId, date',
   queen_batches: '++id, hiveId, startDate',
+  bee_counts: '++id, timestamp, count',
   sync_queue: '++id, table, synced, timestamp',
   local_settings: 'key',
 };

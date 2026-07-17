@@ -1,4 +1,4 @@
-export interface Apiary {
+﻿export interface Apiary {
   id: string;
   name: string;
   type: string;
@@ -84,4 +84,11 @@ export interface SyncQueueItem {
   data: any;
   timestamp: number;
   synced: boolean;
+}
+
+export interface BeeCount {
+  id?: number;
+  count: number;
+  confidence: number;
+  timestamp: string;
 }

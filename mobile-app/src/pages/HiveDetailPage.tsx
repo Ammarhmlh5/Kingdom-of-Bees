@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Stethoscope, Bug, Droplets, Merge, Crown, Grid2X2, ArrowRight, Loader2 } from 'lucide-react';
 import { Header } from '@/components/Header';
@@ -10,7 +10,7 @@ export default function HiveDetailPage() {
   const { id: hiveId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const apiaryId = (location.state as any)?.apiaryId;
+  const [resolvedApiaryId, setResolvedApiaryId] = useState<string | undefined>((location.state as any)?.apiaryId);
   const [hive, setHive] = useState<Hive | null>(null);
   const [inspections, setInspections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,25 +22,35 @@ export default function HiveDetailPage() {
   const loadHive = async () => {
     setLoading(true);
     try {
-      if (apiaryId) {
-        const { data } = await apiClient.get(`/apiaries/${apiaryId}/hives/${hiveId}`);
-        setHive(data.data || data);
+      if (resolvedApiaryId) {
+        const { data } = await apiClient.get(`/apiaries/${resolvedApiaryId}/hives/${hiveId}`);
+        const hiveData = data.data || data;
+        setHive(hiveData);
+        if (hiveData?.apiaryId) setResolvedApiaryId(String(hiveData.apiaryId));
         try {
-          const inspRes = await apiClient.get(`/apiaries/${apiaryId}/inspections`);
+          const inspRes = await apiClient.get(`/apiaries/${resolvedApiaryId}/inspections`);
           setInspections((inspRes.data.data || inspRes.data || []).filter((i: any) => String(i.hiveId) === String(hiveId)).slice(0, 3));
         } catch {
           // ignore
         }
       } else {
-        const { getById } = await import('@/lib/db');
-        const h = await getById<Hive>('hives', hiveId!);
-        if (h) setHive(h);
+        const { getAll } = await import('@/lib/db');
+        const allHives = await getAll<Hive>('hives');
+        const h = allHives.find(hi => String(hi.id) === String(hiveId));
+        if (h) {
+          setHive(h);
+          if (h.apiaryId) setResolvedApiaryId(String(h.apiaryId));
+        }
       }
     } catch {
       try {
-        const { getById } = await import('@/lib/db');
-        const h = await getById<Hive>('hives', hiveId!);
-        if (h) setHive(h);
+        const { getAll } = await import('@/lib/db');
+        const allHives = await getAll<Hive>('hives');
+        const h = allHives.find(hi => String(hi.id) === String(hiveId));
+        if (h) {
+          setHive(h);
+          if (h.apiaryId) setResolvedApiaryId(String(h.apiaryId));
+        }
       } catch {
         // ignore
       }
@@ -115,7 +125,7 @@ export default function HiveDetailPage() {
         <h2 className="text-lg font-bold">إجراءات سريعة</h2>
         <div className="grid grid-cols-3 gap-3">
           {actions.map(({ icon: Icon, label, color, path }) => (
-            <Card key={path} onClick={() => navigate(path, { state: { apiaryId } })}>
+            <Card key={path} onClick={() => navigate(path, { state: { apiaryId: resolvedApiaryId } })}>
               <div className="flex flex-col items-center gap-1.5 py-2">
                 <Icon size={24} className={color} />
                 <span className="text-xs font-medium">{label}</span>

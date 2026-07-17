@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/Button';
@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import apiClient from '@/lib/apiClient';
 import { add, addToSyncQueue } from '@/lib/db';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { AIService } from '@/lib/services/ai.service';
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
 
@@ -32,6 +33,8 @@ export default function InspectionPage() {
   const [eggsSeen, setEggsSeen] = useState(false);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
 
   const addFrame = () => {
     setFrames([...frames, {
@@ -71,7 +74,8 @@ export default function InspectionPage() {
         try {
           await apiClient.post(`/apiaries/${apiaryId}/hives/${hiveId}/inspect`, inspectionData);
           toast.success('تم حفظ الفحص بنجاح');
-          navigate(-1);
+          setSaved(true);
+          runAiAnalysis();
           return;
         } catch {
           // fall through to offline
@@ -81,7 +85,8 @@ export default function InspectionPage() {
       await add('inspections', inspectionData);
       await addToSyncQueue('inspections', 'create', inspectionData);
       toast.success('تم الحفظ محلياً وسيتم المزامنة لاحقاً');
-      navigate(-1);
+      setSaved(true);
+      runAiAnalysis();
     } catch {
       toast.error('حدث خطأ أثناء الحفظ');
     } finally {
@@ -89,9 +94,54 @@ export default function InspectionPage() {
     }
   };
 
+  const runAiAnalysis = async () => {
+    try {
+      const analysis = await AIService.analyzeInspection(frames);
+      setAiAnalysis(analysis);
+    } catch {
+      setAiAnalysis('تعذر تحليل البيانات');
+    }
+  };
+
   const temperamentLabel: Record<string, string> = {
     calm: 'هادئ', gentle: 'لطيف', aggressive: 'عدواني', nervous: 'عصبي',
   };
+
+  if (saved) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header title="فحص الخلية" />
+        <div className="flex-1 px-4 py-4 space-y-4">
+          <Card className="bg-green-50 border-green-200">
+            <div className="text-center py-4">
+              <p className="text-lg font-bold text-green-700">تم حفظ الفحص بنجاح</p>
+              <p className="text-sm text-green-600 mt-1">التاريخ: {new Date().toLocaleDateString('ar-SA')}</p>
+            </div>
+          </Card>
+
+          {aiAnalysis !== null && (
+            <Card className="bg-blue-50 border-blue-200">
+              <h4 className="font-bold text-sm text-blue-800 mb-2">🤖 تحليل الذكاء الاصطناعي</h4>
+              <p className="text-sm text-blue-700 whitespace-pre-line">{aiAnalysis}</p>
+            </Card>
+          )}
+
+          {aiAnalysis === null && (
+            <Card className="bg-gray-50 border-gray-200">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-honey border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm text-bee-muted">جاري تحليل بيانات الفحص...</p>
+              </div>
+            </Card>
+          )}
+
+          <Button fullWidth onClick={() => navigate(-1)}>
+            العودة
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">

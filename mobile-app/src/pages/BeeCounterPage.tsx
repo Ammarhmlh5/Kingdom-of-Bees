@@ -1,20 +1,37 @@
-import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+﻿import { useState, useRef, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { beeCounter } from '@/lib/services/bee-counter.service';
+import { add, addToSyncQueue, getAll } from '@/lib/db';
 import { toast } from 'sonner';
-import { Camera, Upload, Loader2, RotateCcw, Wifi, WifiOff } from 'lucide-react';
+import { Camera, Upload, Loader2, RotateCcw, History, Trash2 } from 'lucide-react';
 import type { BeeCountResult } from '@/lib/services/bee-counter.service';
+import type { BeeCount } from '@/types';
 
 export default function BeeCounterPage() {
-  const navigate = useNavigate();
   const [result, setResult] = useState<BeeCountResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<'online' | 'offline'>('online');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [apiKeyMissing, setApiKeyMissing] = useState(false);
+  const [history, setHistory] = useState<BeeCount[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    loadHistory();
+    const apiKey = import.meta.env.VITE_ROBOFLOW_API_KEY;
+    if (!apiKey) setApiKeyMissing(true);
+  }, []);
+
+  const loadHistory = async () => {
+    try {
+      const records = await getAll<BeeCount>('bee_counts');
+      setHistory(records.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 20));
+    } catch {
+      // ignore
+    }
+  };
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -37,6 +54,23 @@ export default function BeeCounterPage() {
     }
   };
 
+  const saveResult = async () => {
+    if (!result) return;
+    try {
+      const record: BeeCount = {
+        count: result.count,
+        confidence: result.confidence,
+        timestamp: result.timestamp,
+      };
+      await add('bee_counts', record);
+      await addToSyncQueue('bee_counts', 'create', record);
+      toast.success('تم حفظ النتائج');
+      loadHistory();
+    } catch {
+      toast.error('خطأ في الحفظ');
+    }
+  };
+
   const reset = () => {
     setResult(null);
     setImagePreview(null);
@@ -48,16 +82,16 @@ export default function BeeCounterPage() {
       <Header title="عد النحل" subtitle="باستخدام الذكاء الاصطناعي" />
 
       <div className="flex-1 px-4 py-4 space-y-4">
-        <div className="flex gap-2">
-          <button onClick={() => setMode('online')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode === 'online' ? 'bg-honey text-white' : 'bg-bee-border text-bee-muted'}`}>
-            <Wifi size={16} /> عبر الإنترنت
-          </button>
-          <button onClick={() => setMode('offline')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode === 'offline' ? 'bg-honey text-white' : 'bg-bee-border text-bee-muted'}`}>
-            <WifiOff size={16} /> أوفلاين
-          </button>
-        </div>
+        {apiKeyMissing && (
+          <Card className="bg-yellow-50 border-yellow-200">
+            <p className="text-sm text-yellow-700">
+              <strong>تنبيه:</strong> يجب إعداد مفتاح Roboflow API في ملف .env
+            </p>
+            <p className="text-xs text-yellow-600 mt-1">
+              أضف VITE_ROBOFLOW_API_KEY=your_key في ملف .env
+            </p>
+          </Card>
+        )}
 
         {!imagePreview ? (
           <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-bee-border rounded-2xl">
@@ -72,7 +106,7 @@ export default function BeeCounterPage() {
         ) : (
           <>
             <Card className="overflow-hidden p-0">
-              <img src={imagePreview} alt=" bee" className="w-full h-48 object-cover" />
+              <img src={imagePreview} alt="bee" className="w-full h-48 object-cover" />
             </Card>
 
             {loading ? (
@@ -123,13 +157,62 @@ export default function BeeCounterPage() {
               <Button variant="secondary" fullWidth onClick={reset}>
                 <RotateCcw size={16} /> صورة جديدة
               </Button>
-              <Button fullWidth disabled={!result} onClick={() => toast.success('تم حفظ النتائج')}>
+              <Button fullWidth disabled={!result} onClick={saveResult}>
                 حفظ النتائج
               </Button>
             </div>
           </>
         )}
+
+        <div className="pt-4">
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="flex items-center gap-2 text-sm font-medium text-bee-muted hover:text-bee-text transition-colors"
+          >
+            <History size={16} />
+            سجل العد ({history.length})
+            {showHistory ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+
+          {showHistory && (
+            <div className="mt-3 space-y-2">
+              {history.length === 0 ? (
+                <p className="text-xs text-bee-muted py-4 text-center">لا توجد سجلات سابقة</p>
+              ) : (
+                history.map((record, i) => (
+                  <Card key={record.id || i}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-bold text-honey">{record.count} نحلة</p>
+                        <p className="text-xs text-bee-muted">ثقة: {(record.confidence * 100).toFixed(1)}%</p>
+                      </div>
+                      <span className="text-xs text-bee-muted">
+                        {new Date(record.timestamp).toLocaleDateString('ar-SA')}
+                      </span>
+                    </div>
+                  </Card>
+                ))
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
+  );
+}
+
+function ChevronUp({ size, className }: { size: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="m18 15-6-6-6 6"/>
+    </svg>
+  );
+}
+
+function ChevronDown({ size, className }: { size: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="m6 9 6 6 6-6"/>
+    </svg>
   );
 }

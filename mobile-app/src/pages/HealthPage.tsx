@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Card } from '@/components/ui/Card';
-import { Plus, Bug, AlertTriangle, CheckCircle2, Clock, BookOpen, ChevronLeft, Filter } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Plus, Bug, AlertTriangle, CheckCircle2, Clock, BookOpen, ChevronLeft, Filter, Loader2 } from 'lucide-react';
 import apiClient from '@/lib/apiClient';
 
 interface DiseaseRecord {
@@ -13,6 +14,12 @@ interface DiseaseRecord {
   hive?: { hiveNumber: string };
   dateReported: string;
   symptoms?: string;
+}
+
+interface HiveOption {
+  id: string;
+  name: string;
+  status: string;
 }
 
 const statusConfig: Record<string, { bg: string; label: string; icon: React.JSX.Element }> = {
@@ -28,6 +35,9 @@ export default function HealthPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'ACTIVE' | 'TREATED' | 'SUSPECTED'>('all');
   const [filterOpen, setFilterOpen] = useState(false);
+  const [showHivePicker, setShowHivePicker] = useState(false);
+  const [hives, setHives] = useState<HiveOption[]>([]);
+  const [loadingHives, setLoadingHives] = useState(false);
 
   useEffect(() => { loadRecords(); }, [apiaryId]);
 
@@ -42,6 +52,35 @@ export default function HealthPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadHivesForPicker = async () => {
+    if (!apiaryId) return;
+    setLoadingHives(true);
+    try {
+      const { data } = await apiClient.get(`/apiaries/${apiaryId}/hives`);
+      setHives(data.data || data || []);
+    } catch {
+      try {
+        const { getAll } = await import('@/lib/db');
+        const allHives = await getAll<any>('hives');
+        setHives(allHives.filter((h: any) => String(h.apiaryId) === String(apiaryId)));
+      } catch {
+        setHives([]);
+      }
+    } finally {
+      setLoadingHives(false);
+    }
+  };
+
+  const handleFabClick = () => {
+    loadHivesForPicker();
+    setShowHivePicker(true);
+  };
+
+  const handleHiveSelect = (hiveId: string) => {
+    setShowHivePicker(false);
+    navigate(`/hive/${hiveId}/disease`, { state: { apiaryId } });
   };
 
   const filtered = records.filter(r => filter === 'all' || r.status === filter);
@@ -121,10 +160,35 @@ export default function HealthPage() {
         )}
       </div>
 
-      <button onClick={() => navigate(-1)}
+      <button onClick={handleFabClick}
         className="fixed bottom-24 left-4 w-14 h-14 bg-honey text-white rounded-full shadow-lg flex items-center justify-center hover:bg-honey-dark active:scale-95 transition-all z-40">
         <Plus size={28} />
       </button>
+
+      {showHivePicker && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center">
+          <div className="bg-white rounded-t-2xl w-full max-w-lg p-4 space-y-3 max-h-[60vh] overflow-y-auto">
+            <h3 className="font-bold text-sm">اختر الخلية لتسجيل المرض</h3>
+            {loadingHives ? (
+              <div className="py-8 flex justify-center">
+                <Loader2 className="animate-spin text-honey" size={24} />
+              </div>
+            ) : hives.length === 0 ? (
+              <p className="text-sm text-bee-muted py-4 text-center">لا توجد خلايا في هذا المنحل</p>
+            ) : (
+              hives.map(h => (
+                <Card key={h.id} onClick={() => handleHiveSelect(h.id)}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{h.name}</span>
+                    <span className="text-xs text-bee-muted">{h.status}</span>
+                  </div>
+                </Card>
+              ))
+            )}
+            <Button variant="secondary" fullWidth onClick={() => setShowHivePicker(false)}>إلغاء</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

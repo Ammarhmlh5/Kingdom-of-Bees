@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+﻿import { apiClient } from './apiClient';
 
 export interface BeeDetection {
   x: number;
@@ -23,7 +23,7 @@ export interface RoboflowConfig {
 }
 
 const DEFAULT_CONFIG: RoboflowConfig = {
-  apiKey: '',
+  apiKey: import.meta.env.VITE_ROBOFLOW_API_KEY || '',
   modelId: 'bees-tbdsg/bee-counting',
   apiUrl: 'https://serverless.roboflow.com',
 };
@@ -36,6 +36,10 @@ export class BeeCounterService {
   }
 
   async countBeesFromImage(imageBase64: string): Promise<BeeCountResult> {
+    if (!this.config.apiKey) {
+      throw new Error('يجب إعداد مفتاح Roboflow API. أضف VITE_ROBOFLOW_API_KEY في ملف .env');
+    }
+
     try {
       const response = await fetch(
         `${this.config.apiUrl}/${this.config.modelId}?api_key=${this.config.apiKey}`,
@@ -64,12 +68,15 @@ export class BeeCounterService {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      console.error('Bee counting failed:', error);
       throw error;
     }
   }
 
   async countBeesFromUrl(imageUrl: string): Promise<BeeCountResult> {
+    if (!this.config.apiKey) {
+      throw new Error('يجب إعداد مفتاح Roboflow API. أضف VITE_ROBOFLOW_API_KEY في ملف .env');
+    }
+
     try {
       const response = await fetch(
         `${this.config.apiUrl}/${this.config.modelId}?api_key=${this.config.apiKey}`,
@@ -98,7 +105,6 @@ export class BeeCounterService {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      console.error('Bee counting failed:', error);
       throw error;
     }
   }
