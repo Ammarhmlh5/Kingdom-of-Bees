@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import apiClient from '@/lib/apiClient';
-import { add, getAll, addToSyncQueue } from '@/lib/db';
+import { add, getAll, put, addToSyncQueue } from '@/lib/db';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { toast } from 'sonner';
-import { Crown, Plus, Calendar } from 'lucide-react';
+import { Crown, Plus, Calendar, ArrowRight } from 'lucide-react';
 
 const TYPE_LABELS: Record<string, string> = {
   grafting: 'نقل شاهدات', split: 'تقسيم سلسلة', queen_cell: 'خلية ملكة جاهزة', emergency: 'ملك طوارئ',
@@ -19,6 +19,12 @@ const STATUS_LABELS: Record<string, string> = {
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-700', capped: 'bg-blue-100 text-blue-700',
   hatched: 'bg-green-100 text-green-700', mated: 'bg-purple-100 text-purple-700', failed: 'bg-red-100 text-red-700',
+};
+const NEXT_STATUS: Record<string, string> = {
+  pending: 'capped', capped: 'hatched', hatched: 'mated',
+};
+const NEXT_STATUS_LABELS: Record<string, string> = {
+  pending: 'مغطاة', capped: 'فُرخت', hatched: 'تلقيحت',
 };
 
 export default function QueenPage() {
@@ -70,6 +76,28 @@ export default function QueenPage() {
     } catch { toast.error('حدث خطأ'); } finally { setLoading(false); }
   };
 
+  const updateStatus = async (batch: any, newStatus: string) => {
+    const label = STATUS_LABELS[newStatus] || newStatus;
+    if (isOnline && apiaryId) {
+      try {
+        await apiClient.put(`/apiaries/${apiaryId}/queens/${batch.id}`, { status: newStatus });
+        toast.success(`تم التحديث إلى: ${label}`);
+        loadBatches();
+        return;
+      } catch { /* fall through */ }
+    }
+    // Offline: save locally
+    const updated = { ...batch, status: newStatus };
+    await put('queen_batches', updated);
+    await addToSyncQueue('queen_batches', 'update', { id: batch.id, status: newStatus });
+    toast.success(`تم التحديث محلياً إلى: ${label}`);
+    loadBatches();
+  };
+
+  const markFailed = async (batch: any) => {
+    await updateStatus(batch, 'failed');
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header title="إدارة الملكات" />
@@ -100,24 +128,61 @@ export default function QueenPage() {
           </div>
         ) : batches.map((batch: any, i: number) => (
           <Card key={batch.id || i}>
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Crown size={16} className="text-honey" />
-                  <span className="font-bold text-sm">{TYPE_LABELS[batch.type] || batch.type}</span>
+            <div className="space-y-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Crown size={16} className="text-honey" />
+                    <span className="font-bold text-sm">{TYPE_LABELS[batch.type] || batch.type}</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[batch.status] || 'bg-gray-100'}`}>
+                      {STATUS_LABELS[batch.status] || batch.status}
+                    </span>
+                    <span className="text-xs text-bee-muted">{batch.cellsCount} خلية</span>
+                  </div>
+                  <div className="flex items-center gap-1 mt-1 text-xs text-bee-muted">
+                    <Calendar size={12} />
+                    {new Date(batch.startDate).toLocaleDateString('ar-SA')}
+                  </div>
+                  {batch.notes && <p className="text-xs text-bee-muted mt-1">{batch.notes}</p>}
                 </div>
-                <div className="flex items-center gap-3 mt-2">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[batch.status] || 'bg-gray-100'}`}>
-                    {STATUS_LABELS[batch.status] || batch.status}
-                  </span>
-                  <span className="text-xs text-bee-muted">{batch.cellsCount} خلية</span>
-                </div>
-                <div className="flex items-center gap-1 mt-1 text-xs text-bee-muted">
-                  <Calendar size={12} />
-                  {new Date(batch.startDate).toLocaleDateString('ar-SA')}
-                </div>
-                {batch.notes && <p className="text-xs text-bee-muted mt-1">{batch.notes}</p>}
               </div>
+
+              {/* Status update workflow */}
+              {batch.status !== 'failed' && batch.status !== 'mated' && (
+                <div className="flex gap-2 pt-2 border-t border-bee-border">
+                  {NEXT_STATUS[batch.status] && (
+                    <Button
+                      size="sm"
+                      onClick={() => updateStatus(batch, NEXT_STATUS[batch.status])}
+                      className="flex-1"
+                    >
+                      <ArrowRight size={14} />
+                      {NEXT_STATUS_LABELS[batch.status]}
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => markFailed(batch)}
+                  >
+                    فاشلة
+                  </Button>
+                </div>
+              )}
+
+              {batch.status === 'mated' && (
+                <div className="pt-2 border-t border-bee-border">
+                  <p className="text-xs text-green-600 font-medium">✓ الدفعة مكتملة بنجاح</p>
+                </div>
+              )}
+
+              {batch.status === 'failed' && (
+                <div className="pt-2 border-t border-bee-border">
+                  <p className="text-xs text-red-600 font-medium">✗ الدفعة فاشلة</p>
+                </div>
+              )}
             </div>
           </Card>
         ))}

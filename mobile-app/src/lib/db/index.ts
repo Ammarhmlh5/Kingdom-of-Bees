@@ -12,6 +12,7 @@ const SCHEMA = {
   harvest_records: '++id, hiveId, date',
   queen_batches: '++id, hiveId, startDate',
   bee_counts: '++id, timestamp, count',
+  chat_history: '++id, timestamp',
   sync_queue: '++id, table, synced, timestamp',
   local_settings: 'key',
 };
