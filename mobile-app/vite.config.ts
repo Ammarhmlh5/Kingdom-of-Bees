@@ -27,6 +27,7 @@ export default defineConfig({
       'react-native-vision-camera': path.resolve(__dirname, './src/lib/stubs/vision-camera-stub.ts'),
       'react-native-fast-tflite': path.resolve(__dirname, './src/lib/stubs/tflite-stub.ts'),
       'react-native-nitro-modules': path.resolve(__dirname, './src/lib/stubs/nitro-stub.ts'),
+      '@react-native-google-signin/google-signin': path.resolve(__dirname, './src/lib/stubs/google-signin-stub.ts'),
     },
   },
   server: {

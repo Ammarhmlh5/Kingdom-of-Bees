@@ -13,6 +13,7 @@
   "dependencies": {
     "@kingdom-of-bees/shared-types": "file:../packages/shared-types",
     "@nozbe/watermelondb": "^0.28.0",
+    "@react-native-google-signin/google-signin": "^16.1.2",
     "@tanstack/react-query": "^5.90.20",
     "axios": "^1.13.4",
     "class-variance-authority": "^0.7.1",
@@ -27,6 +28,7 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-native": "^0.86.0",
+    "react-native-cloud-storage": "^3.0.1",
     "react-native-fast-tflite": "^3.0.1",
     "react-native-nitro-image": "^0.15.1",
     "react-native-nitro-modules": "^0.36.1",
