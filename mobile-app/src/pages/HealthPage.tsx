@@ -1,17 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Card } from '@/components/ui/Card';
-import {
-  Plus,
-  Bug,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  BookOpen,
-  ChevronLeft,
-  Filter,
-} from 'lucide-react';
+import { Plus, Bug, AlertTriangle, CheckCircle2, Clock, BookOpen, ChevronLeft, Filter } from 'lucide-react';
 import apiClient from '@/lib/apiClient';
 
 interface DiseaseRecord {
@@ -32,14 +23,13 @@ const statusConfig: Record<string, { bg: string; label: string; icon: React.JSX.
 
 export default function HealthPage() {
   const { id: apiaryId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [records, setRecords] = useState<DiseaseRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'ACTIVE' | 'TREATED' | 'SUSPECTED'>('all');
   const [filterOpen, setFilterOpen] = useState(false);
 
-  useEffect(() => {
-    loadRecords();
-  }, [apiaryId]);
+  useEffect(() => { loadRecords(); }, [apiaryId]);
 
   const loadRecords = async () => {
     if (!apiaryId) return;
@@ -62,11 +52,7 @@ export default function HealthPage() {
       <div className="flex flex-col min-h-screen pb-20">
         <Header title="الصحة والأمراض" subtitle="جاري التحميل..." />
         <div className="flex-1 px-4 py-4 space-y-4">
-          {[1, 2, 3].map(i => (
-            <Card key={i} className="animate-pulse">
-              <div className="h-16 bg-bee-border/50 rounded-lg" />
-            </Card>
-          ))}
+          {[1, 2, 3].map(i => <Card key={i} className="animate-pulse"><div className="h-16 bg-bee-border/50 rounded-lg" /></Card>)}
         </div>
       </div>
     );
@@ -77,10 +63,7 @@ export default function HealthPage() {
       <Header title="الصحة والأمراض" subtitle={`${activeCount} حالة نشطة`} />
 
       <div className="flex-1 px-4 py-4 space-y-4">
-        <Card
-          className="bg-blue-50 border-blue-200"
-          onClick={() => {}}
-        >
+        <Card className="bg-blue-50 border-blue-200" onClick={() => {}}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <BookOpen size={20} className="text-blue-600" />
@@ -90,28 +73,16 @@ export default function HealthPage() {
           </div>
         </Card>
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => setFilterOpen(!filterOpen)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filterOpen ? 'bg-honey text-white' : 'bg-bee-border text-bee-muted'
-            }`}
-          >
-            <Filter size={14} />
-            تصفية
-          </button>
-        </div>
+        <button onClick={() => setFilterOpen(!filterOpen)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterOpen ? 'bg-honey text-white' : 'bg-bee-border text-bee-muted'}`}>
+          <Filter size={14} /> تصفية
+        </button>
 
         {filterOpen && (
           <div className="flex gap-2">
             {(['all', 'ACTIVE', 'TREATED', 'SUSPECTED'] as const).map(f => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                  filter === f ? 'bg-honey text-white' : 'bg-bee-border text-bee-muted'
-                }`}
-              >
+              <button key={f} onClick={() => setFilter(f)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${filter === f ? 'bg-honey text-white' : 'bg-bee-border text-bee-muted'}`}>
                 {f === 'all' ? 'الكل' : statusConfig[f]?.label || f}
               </button>
             ))}
@@ -133,16 +104,12 @@ export default function HealthPage() {
                     <Bug size={14} className="text-honey" />
                     <h3 className="font-bold text-sm">{record.diseaseName}</h3>
                   </div>
-                  {record.hive && (
-                    <p className="text-xs text-bee-muted">خلية رقم {record.hive.hiveNumber}</p>
-                  )}
+                  {record.hive && <p className="text-xs text-bee-muted">خلية رقم {record.hive.hiveNumber}</p>}
                   <div className="flex items-center gap-2 text-xs text-bee-muted">
                     <Clock size={12} />
                     {new Date(record.dateReported).toLocaleDateString('ar-SA')}
                   </div>
-                  {record.symptoms && (
-                    <p className="text-xs text-bee-muted mt-1">{record.symptoms}</p>
-                  )}
+                  {record.symptoms && <p className="text-xs text-bee-muted mt-1">{record.symptoms}</p>}
                 </div>
                 <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full ${statusConfig[record.status]?.bg || 'bg-gray-100 text-gray-700'}`}>
                   {statusConfig[record.status]?.icon || <Clock size={12} />}
@@ -154,7 +121,8 @@ export default function HealthPage() {
         )}
       </div>
 
-      <button className="fixed bottom-24 left-4 w-14 h-14 bg-honey text-white rounded-full shadow-lg flex items-center justify-center hover:bg-honey-dark active:scale-95 transition-all z-40">
+      <button onClick={() => navigate(-1)}
+        className="fixed bottom-24 left-4 w-14 h-14 bg-honey text-white rounded-full shadow-lg flex items-center justify-center hover:bg-honey-dark active:scale-95 transition-all z-40">
         <Plus size={28} />
       </button>
     </div>

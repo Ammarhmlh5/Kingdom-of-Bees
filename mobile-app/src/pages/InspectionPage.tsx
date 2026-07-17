@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
-import { AIService } from '@/lib/services/ai.service';
+import apiClient from '@/lib/apiClient';
 import { add, addToSyncQueue } from '@/lib/db';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { toast } from 'sonner';
@@ -27,9 +27,8 @@ export default function InspectionPage() {
   ]);
   const [temperament, setTemperament] = useState('calm');
   const [queenSeen, setQueenSeen] = useState(false);
+  const [eggsSeen, setEggsSeen] = useState(false);
   const [notes, setNotes] = useState('');
-  const [analysis, setAnalysis] = useState('');
-  const [analyzing, setAnalyzing] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const addFrame = () => {
@@ -53,48 +52,43 @@ export default function InspectionPage() {
     setFrames(updated);
   };
 
-  const analyze = async () => {
-    setAnalyzing(true);
-    try {
-      const result = await AIService.analyzeInspection(frames);
-      setAnalysis(result);
-    } finally {
-      setAnalyzing(false);
-    }
-  };
-
   const handleSubmit = async () => {
     setLoading(true);
     try {
       const inspectionData = {
-        hiveId: Number(hiveId),
+        hiveId,
         date: new Date().toISOString(),
         temperament,
         queenSeen,
+        eggsSeen,
         notes,
         frames,
       };
 
-      const id = await add('inspections', inspectionData);
-
       if (isOnline) {
         try {
-          const { apiClient } = await import('@/lib/apiClient');
-          await apiClient.post('/api/inspections', { ...inspectionData, id });
+          await apiClient.post(`/hives/${hiveId}/inspections`, inspectionData);
+          toast.success('تم حفظ الفحص بنجاح');
+          navigate(-1);
+          return;
         } catch {
-          await addToSyncQueue('inspections', 'create', { ...inspectionData, id });
+          // fall through to offline
         }
-      } else {
-        await addToSyncQueue('inspections', 'create', { ...inspectionData, id });
       }
 
-      toast.success('تم حفظ الفحص بنجاح');
+      await add('inspections', inspectionData);
+      await addToSyncQueue('inspections', 'create', inspectionData);
+      toast.success('تم الحفظ محلياً وسيتم المزامنة لاحقاً');
       navigate(-1);
     } catch {
       toast.error('حدث خطأ أثناء الحفظ');
     } finally {
       setLoading(false);
     }
+  };
+
+  const temperamentLabel: Record<string, string> = {
+    calm: 'هادئ', gentle: 'لطيف', aggressive: 'عدواني', nervous: 'عصبي',
   };
 
   return (
@@ -110,21 +104,27 @@ export default function InspectionPage() {
               onChange={(e) => setTemperament(e.target.value)}
               className="w-full px-3 py-2.5 rounded-lg border border-bee-border bg-white text-sm"
             >
-              <option value="calm">هادئ</option>
-              <option value="gentle">لطيف</option>
-              <option value="aggressive">عدواني</option>
-              <option value="nervous">عصبي</option>
+              {Object.entries(temperamentLabel).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
             </select>
           </div>
-          <div className="flex-1">
-            <label className="text-sm font-medium text-bee-text block mb-1.5">الملكة مرئية</label>
+          <div className="flex-1 flex flex-col gap-2">
             <button
               onClick={() => setQueenSeen(!queenSeen)}
-              className={`w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+              className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
                 queenSeen ? 'bg-green-50 border-green-300 text-green-700' : 'bg-white border-bee-border text-bee-muted'
               }`}
             >
-              {queenSeen ? 'نعم مرئية' : 'لم تُرَ'}
+              {queenSeen ? '✓ الملكة مرئية' : 'الملكة مرئية'}
+            </button>
+            <button
+              onClick={() => setEggsSeen(!eggsSeen)}
+              className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+                eggsSeen ? 'bg-green-50 border-green-300 text-green-700' : 'bg-white border-bee-border text-bee-muted'
+              }`}
+            >
+              {eggsSeen ? '✓ بيض مرئي' : 'بيض مرئي'}
             </button>
           </div>
         </div>
@@ -148,30 +148,21 @@ export default function InspectionPage() {
             <div className="space-y-2">
               <div>
                 <label className="text-xs text-bee-muted">البيض: {frame.broodPercent}%</label>
-                <input
-                  type="range" min="0" max="100"
-                  value={frame.broodPercent}
+                <input type="range" min="0" max="100" value={frame.broodPercent}
                   onChange={(e) => updateFrame(index, 'broodPercent', Number(e.target.value))}
-                  className="w-full accent-honey"
-                />
+                  className="w-full accent-honey" />
               </div>
               <div>
                 <label className="text-xs text-bee-muted">العسل: {frame.honeyPercent}%</label>
-                <input
-                  type="range" min="0" max="100"
-                  value={frame.honeyPercent}
+                <input type="range" min="0" max="100" value={frame.honeyPercent}
                   onChange={(e) => updateFrame(index, 'honeyPercent', Number(e.target.value))}
-                  className="w-full accent-honey"
-                />
+                  className="w-full accent-honey" />
               </div>
               <div>
                 <label className="text-xs text-bee-muted">حبوب اللقاح: {frame.pollenPercent}%</label>
-                <input
-                  type="range" min="0" max="100"
-                  value={frame.pollenPercent}
+                <input type="range" min="0" max="100" value={frame.pollenPercent}
                   onChange={(e) => updateFrame(index, 'pollenPercent', Number(e.target.value))}
-                  className="w-full accent-honey"
-                />
+                  className="w-full accent-honey" />
               </div>
             </div>
           </Card>
@@ -184,17 +175,6 @@ export default function InspectionPage() {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
-
-        <Button variant="secondary" fullWidth onClick={analyze} disabled={analyzing}>
-          {analyzing ? 'جاري التحليل...' : ' تحليل ذكي (AI)'}
-        </Button>
-
-        {analysis && (
-          <Card className="bg-blue-50 border-blue-200">
-            <h4 className="font-bold text-sm mb-2">تحليل AI:</h4>
-            <p className="text-sm text-bee-text whitespace-pre-line">{analysis}</p>
-          </Card>
-        )}
 
         <div className="flex gap-3 pt-2 pb-4">
           <Button variant="secondary" fullWidth onClick={() => navigate(-1)}>إلغاء</Button>

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, ShoppingCart, Compass, Cloud } from 'lucide-react';
+import { Home, ShoppingCart, Compass, Cloud, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const tabs = [
@@ -7,6 +7,7 @@ const tabs = [
   { to: '/shop', icon: ShoppingCart, label: 'السوق' },
   { to: '/explore', icon: Compass, label: 'استكشف' },
   { to: '/weather', icon: Cloud, label: 'الطقس' },
+  { to: '/settings', icon: Settings, label: 'الإعدادات' },
 ];
 
 export function BottomNav() {
@@ -20,14 +21,14 @@ export function BottomNav() {
             end={to === '/'}
             className={({ isActive }) =>
               cn(
-                'flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors min-w-[60px]',
+                'flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors min-w-[52px]',
                 isActive ? 'text-honey' : 'text-bee-muted'
               )
             }
           >
             {({ isActive }) => (
               <>
-                <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                 <span className="text-[10px] font-medium">{label}</span>
               </>
             )}

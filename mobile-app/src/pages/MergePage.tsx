@@ -3,31 +3,44 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { getAll, put, remove, addToSyncQueue } from '@/lib/db';
-import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import apiClient from '@/lib/apiClient';
 import { toast } from 'sonner';
-import { Merge, AlertTriangle, X } from 'lucide-react';
+import { Merge, AlertTriangle, X, Loader2 } from 'lucide-react';
 import type { Hive } from '@/types';
 
 export default function MergePage() {
   const { id: hiveId } = useParams();
   const navigate = useNavigate();
-  const isOnline = useOnlineStatus();
-  const [hives, setHives] = useState<Hive[]>([]);
+  const [candidates, setCandidates] = useState<Hive[]>([]);
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [merging, setMerging] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [targetName, setTargetName] = useState('');
 
   useEffect(() => {
-    loadHives();
+    loadCandidates();
   }, [hiveId]);
 
-  const loadHives = async () => {
-    const all = await getAll<Hive>('hives');
-    const source = all.find(h => String(h.id) === String(hiveId));
-    if (source) {
-      setHives(all.filter(h => String(h.apiaryId) === String(source.apiaryId) && String(h.id) !== String(hiveId)));
+  const loadCandidates = async () => {
+    setLoading(true);
+    try {
+      const { data } = await apiClient.get(`/hives/${hiveId}/merge-candidates`);
+      const list = data.data || data || [];
+      setCandidates(list.filter((h: any) => String(h.id) !== String(hiveId)));
+    } catch {
+      try {
+        const { getAll } = await import('@/lib/db');
+        const all = await getAll<Hive>('hives');
+        const source = all.find(h => String(h.id) === String(hiveId));
+        if (source) {
+          setCandidates(all.filter(h => String(h.apiaryId) === String(source.apiaryId) && String(h.id) !== String(hiveId)));
+        }
+      } catch {
+        // ignore
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -36,7 +49,7 @@ export default function MergePage() {
       toast.error('يرجى اختيار الخلية المستهدفة');
       return;
     }
-    const target = hives.find(h => String(h.id) === selectedTarget);
+    const target = candidates.find(h => String(h.id) === selectedTarget);
     if (target) {
       setTargetName(target.name);
       setShowConfirm(true);
@@ -45,42 +58,28 @@ export default function MergePage() {
 
   const handleMerge = async () => {
     setShowConfirm(false);
-    setLoading(true);
+    setMerging(true);
     try {
-      const allHives = await getAll<Hive>('hives');
-      const target = allHives.find(h => String(h.id) === selectedTarget);
-      const source = allHives.find(h => String(h.id) === String(hiveId));
-
-      if (source && target) {
-        const newFrames = (target.framesCount || 10) + (source.framesCount || 10);
-        await put('hives', { ...target, framesCount: newFrames });
-        await remove('hives', Number(hiveId));
-
-        if (isOnline) {
-          try {
-            const { apiClient } = await import('@/lib/apiClient');
-            await apiClient.post('/api/hives/merge', {
-              sourceId: Number(hiveId),
-              targetId: Number(selectedTarget),
-            });
-          } catch {
-            await addToSyncQueue('hives', 'update', { ...target, framesCount: newFrames });
-            await addToSyncQueue('hives', 'delete', { id: Number(hiveId) });
-          }
-        } else {
-          await addToSyncQueue('hives', 'update', { ...target, framesCount: newFrames });
-          await addToSyncQueue('hives', 'delete', { id: Number(hiveId) });
-        }
-      }
-
+      await apiClient.post(`/hives/${hiveId}/merge`, { targetId: selectedTarget });
       toast.success('تم دمج الخلية بنجاح');
       navigate(-1);
-    } catch {
-      toast.error('حدث خطأ أثناء الدمج');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'حدث خطأ أثناء الدمج');
     } finally {
-      setLoading(false);
+      setMerging(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header title="دمج خلايا" />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="animate-spin text-honey" size={32} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -93,7 +92,7 @@ export default function MergePage() {
             <div>
               <p className="text-sm font-bold text-yellow-800">تحذير</p>
               <p className="text-xs text-yellow-700 mt-1">
-                الدمج سيحذف الخلية المصدر وتنقل أطرها إلى الخلية المستهدفة. تأكد من أن الملكة في الخلية المصدر ليست الأفضل.
+                الدمج سيحذف الخلية المصدر وتنقل أطرها إلى الخلية المستهدفة. تأكد من اختيار الخلية الصحيحة.
               </p>
             </div>
           </div>
@@ -101,14 +100,14 @@ export default function MergePage() {
 
         <h3 className="font-bold text-sm">اختر الخلية المستهدفة:</h3>
 
-        {hives.length === 0 ? (
+        {candidates.length === 0 ? (
           <div className="text-center py-12 text-bee-muted">
             <Merge size={48} className="mx-auto mb-3 opacity-50" />
-            <p>لا توجد خلايا أخرى في نفس المنحل للدمج</p>
+            <p>لا توجد خلايا أخرى للدمج</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {hives.map(hive => (
+            {candidates.map(hive => (
               <Card
                 key={hive.id}
                 onClick={() => setSelectedTarget(String(hive.id))}
@@ -117,7 +116,7 @@ export default function MergePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="font-bold text-sm">{hive.name}</h4>
-                    <p className="text-xs text-bee-muted">{hive.framesCount || 10} إطار</p>
+                    <p className="text-xs text-bee-muted">{hive.framesCount || 10} إطار · {hive.type}</p>
                   </div>
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                     selectedTarget === String(hive.id) ? 'border-honey bg-honey' : 'border-gray-300'
@@ -136,8 +135,8 @@ export default function MergePage() {
           <Button variant="secondary" fullWidth onClick={() => navigate(-1)}>
             إلغاء
           </Button>
-          <Button fullWidth onClick={handleMergeClick} disabled={!selectedTarget || loading}>
-            {loading ? 'جاري الدمج...' : (
+          <Button fullWidth onClick={handleMergeClick} disabled={!selectedTarget || merging}>
+            {merging ? 'جاري الدمج...' : (
               <>
                 <Merge size={16} />
                 دمج الآن

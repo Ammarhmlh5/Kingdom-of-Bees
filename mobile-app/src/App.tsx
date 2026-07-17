@@ -25,7 +25,7 @@ import HarvestPage from '@/pages/HarvestPage';
 import AlertsPage from '@/pages/AlertsPage';
 import TeamPage from '@/pages/TeamPage';
 import HealthPage from '@/pages/HealthPage';
-import { BeeCounterPage } from '@/pages/BeeCounterPage';
+import BeeCounterPage from '@/pages/BeeCounterPage';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (

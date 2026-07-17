@@ -1,36 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Card } from '@/components/ui/Card';
-import { Plus, Mail, Calendar, Trash2, Shield, User } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Plus, Mail, Calendar, Trash2, Shield, User, X, Loader2 } from 'lucide-react';
 import apiClient from '@/lib/apiClient';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface TeamMember {
-  id: string;
   userId: string;
-  role: 'OWNER' | 'ADMIN' | 'WORKER';
-  user?: {
-    fullName: string;
-    email: string;
-  };
-  createdAt: string;
+  name: string;
+  email: string;
+  role: 'owner' | 'assistant';
+  joinedAt: string | null;
 }
 
 const roleConfig: Record<string, { bg: string; label: string; icon: React.JSX.Element }> = {
-  OWNER: { bg: 'bg-honey/10 text-honey', label: 'المالك', icon: <Shield size={12} /> },
-  ADMIN: { bg: 'bg-blue-100 text-blue-700', label: 'مدير', icon: <Shield size={12} /> },
-  WORKER: { bg: 'bg-gray-100 text-gray-600', label: 'عضو', icon: <User size={12} /> },
+  owner: { bg: 'bg-honey/10 text-honey', label: 'المالك', icon: <Shield size={12} /> },
+  assistant: { bg: 'bg-blue-100 text-blue-700', label: 'مساعد', icon: <User size={12} /> },
 };
 
 export default function TeamPage() {
   const { id: apiaryId } = useParams<{ id: string }>();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviting, setInviting] = useState(false);
 
-  useEffect(() => {
-    loadMembers();
-  }, [apiaryId]);
+  useEffect(() => { loadMembers(); }, [apiaryId]);
 
   const loadMembers = async () => {
     if (!apiaryId) return;
@@ -38,10 +37,6 @@ export default function TeamPage() {
       setLoading(true);
       const response = await apiClient.get(`/apiaries/${apiaryId}/members`);
       setMembers(response.data.data || []);
-
-      // Get current user ID from token
-      const tokenResponse = await apiClient.get('/auth/me');
-      setCurrentUserId(tokenResponse.data.data?.id || '');
     } catch {
       setMembers([]);
     } finally {
@@ -49,16 +44,30 @@ export default function TeamPage() {
     }
   };
 
-  const isOwner = members.find(m => m.userId === currentUserId)?.role === 'OWNER';
-
-  const handleRemove = async (memberId: string) => {
-    if (!isOwner || !apiaryId) return;
+  const handleInvite = async () => {
+    if (!inviteEmail.trim() || !apiaryId) return;
+    setInviting(true);
     try {
-      await apiClient.delete(`/apiaries/${apiaryId}/members/${memberId}`);
-      setMembers(prev => prev.filter(m => m.id !== memberId));
+      await apiClient.post(`/apiaries/${apiaryId}/members`, { email: inviteEmail.trim() });
+      toast.success('تم إرسال الدعوة بنجاح');
+      setInviteOpen(false);
+      setInviteEmail('');
+      loadMembers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'خطأ في إرسال الدعوة');
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const handleRemove = async (memberUserId: string) => {
+    if (!apiaryId) return;
+    try {
+      await apiClient.delete(`/apiaries/${apiaryId}/members/${memberUserId}`);
+      setMembers(prev => prev.filter(m => m.userId !== memberUserId));
+      toast.success('تم إزالة العضو');
     } catch {
-      // Optimistic update
-      setMembers(prev => prev.filter(m => m.id !== memberId));
+      toast.error('حدث خطأ');
     }
   };
 
@@ -68,9 +77,7 @@ export default function TeamPage() {
         <Header title="الفريق" subtitle="جاري التحميل..." />
         <div className="flex-1 px-4 py-4 space-y-4">
           {[1, 2, 3].map(i => (
-            <Card key={i} className="animate-pulse">
-              <div className="h-16 bg-bee-border/50 rounded-lg" />
-            </Card>
+            <Card key={i} className="animate-pulse"><div className="h-16 bg-bee-border/50 rounded-lg" /></Card>
           ))}
         </div>
       </div>
@@ -90,35 +97,35 @@ export default function TeamPage() {
           </div>
         ) : (
           members.map(member => (
-            <Card key={member.id}>
+            <Card key={member.userId}>
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-bee-border flex items-center justify-center text-sm font-bold text-bee-text">
-                    {member.user?.fullName?.charAt(0) || '?'}
+                    {member.name?.charAt(0) || '?'}
                   </div>
                   <div className="space-y-1">
-                    <h3 className="font-bold text-sm">{member.user?.fullName || 'غير معروف'}</h3>
+                    <h3 className="font-bold text-sm">{member.name}</h3>
                     <div className="flex items-center gap-1 text-xs text-bee-muted">
                       <Mail size={12} />
-                      {member.user?.email || ''}
+                      {member.email}
                     </div>
                     <div className="flex items-center gap-2 pt-1">
                       <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full ${roleConfig[member.role]?.bg || 'bg-gray-100 text-gray-600'}`}>
                         {roleConfig[member.role]?.icon || <User size={12} />}
                         {roleConfig[member.role]?.label || member.role}
                       </span>
-                      <div className="flex items-center gap-1 text-[10px] text-bee-muted">
-                        <Calendar size={10} />
-                        {new Date(member.createdAt).toLocaleDateString('ar-SA')}
-                      </div>
+                      {member.joinedAt && (
+                        <div className="flex items-center gap-1 text-[10px] text-bee-muted">
+                          <Calendar size={10} />
+                          {new Date(member.joinedAt).toLocaleDateString('ar-SA')}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-                {isOwner && member.userId !== currentUserId && (
-                  <button
-                    onClick={() => handleRemove(member.id)}
-                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
+                {member.role !== 'owner' && (
+                  <button onClick={() => handleRemove(member.userId)}
+                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                     <Trash2 size={16} />
                   </button>
                 )}
@@ -128,9 +135,33 @@ export default function TeamPage() {
         )}
       </div>
 
-      <button className="fixed bottom-24 left-4 w-14 h-14 bg-honey text-white rounded-full shadow-lg flex items-center justify-center hover:bg-honey-dark active:scale-95 transition-all z-40">
+      <button onClick={() => setInviteOpen(true)}
+        className="fixed bottom-24 left-4 w-14 h-14 bg-honey text-white rounded-full shadow-lg flex items-center justify-center hover:bg-honey-dark active:scale-95 transition-all z-40">
         <Plus size={28} />
       </button>
+
+      {inviteOpen && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center">
+          <div className="bg-white rounded-t-2xl w-full max-w-lg p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-lg">دعوة عضو</h3>
+              <button onClick={() => setInviteOpen(false)} className="p-1 text-bee-muted hover:text-bee-text">
+                <X size={20} />
+              </button>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-bee-text block mb-1">البريد الإلكتروني</label>
+              <input type="email" placeholder="example@email.com" dir="ltr" value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-bee-border text-sm text-left" />
+            </div>
+            <Button fullWidth onClick={handleInvite} disabled={!inviteEmail.trim() || inviting}>
+              {inviting ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
+              {inviting ? 'جاري الإرسال...' : 'إرسال الدعوة'}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, Textarea } from '@/components/ui/Input';
+import apiClient from '@/lib/apiClient';
 import { add, addToSyncQueue } from '@/lib/db';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { toast } from 'sonner';
@@ -29,7 +30,6 @@ export default function AddHivePage() {
     setLoading(true);
     try {
       const hiveData = {
-        apiaryId: Number(apiaryId),
         name,
         type,
         status: 'active',
@@ -37,23 +37,22 @@ export default function AddHivePage() {
         queenSource: queenSource || undefined,
         framesCount: Number(framesCount),
         notes: notes || undefined,
-        createdAt: new Date().toISOString(),
       };
-
-      const id = await add('hives', hiveData);
 
       if (isOnline) {
         try {
-          const { apiClient } = await import('@/lib/apiClient');
-          await apiClient.post('/api/hives', { ...hiveData, id });
+          await apiClient.post(`/apiaries/${apiaryId}/hives`, hiveData);
+          toast.success('تم إضافة الخلية بنجاح');
+          navigate(`/apiary/${apiaryId}/hives`);
+          return;
         } catch {
-          await addToSyncQueue('hives', 'create', { ...hiveData, id });
+          // fall through to offline save
         }
-      } else {
-        await addToSyncQueue('hives', 'create', { ...hiveData, id });
       }
 
-      toast.success('تم إضافة الخلية بنجاح');
+      await add('hives', { ...hiveData, apiaryId: Number(apiaryId), createdAt: new Date().toISOString() });
+      await addToSyncQueue('hives', 'create', { ...hiveData, apiaryId: Number(apiaryId) });
+      toast.success('تم الحفظ محلياً وسيتم المزامنة لاحقاً');
       navigate(`/apiary/${apiaryId}/hives`);
     } catch {
       toast.error('حدث خطأ أثناء الحفظ');
@@ -82,7 +81,7 @@ export default function AddHivePage() {
             { value: 'langstroth', label: 'لانجستروث' },
             { value: 'top_bar', label: 'بار علوي' },
             { value: 'dadar', label: 'دادار' },
-            { value: 'warré', label: 'واريه' },
+            { value: 'warre', label: 'واريه' },
           ]}
         />
 

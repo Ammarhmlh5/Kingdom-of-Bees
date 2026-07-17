@@ -1,170 +1,135 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { BeeCounter } from '../components/BeeCounter';
-import { BeeCountResult } from '../lib/services/bee-counter.service';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Header } from '@/components/Header';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { beeCounter } from '@/lib/services/bee-counter.service';
+import { toast } from 'sonner';
+import { Camera, Upload, Loader2, RotateCcw, Wifi, WifiOff } from 'lucide-react';
+import type { BeeCountResult } from '@/lib/services/bee-counter.service';
 
-export function BeeCounterPage() {
-  const [result, setResult] = useState<BeeCountResult | null>(null);
-  const [useOfflineMode, setUseOfflineMode] = useState(false);
+export default function BeeCounterPage() {
   const navigate = useNavigate();
+  const [result, setResult] = useState<BeeCountResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<'online' | 'offline'>('online');
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleCountComplete = (countResult: BeeCountResult) => {
-    setResult(countResult);
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+
+    setLoading(true);
+    try {
+      const base64 = (reader.result as string).split(',')[1];
+      const countResult = await beeCounter.countBeesFromImage(base64);
+      setResult(countResult);
+      toast.success(`تم اكتشاف ${countResult.count} نحلة`);
+    } catch (err: any) {
+      toast.error(err.message || 'خطأ في العد');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleError = (error: Error) => {
-    Alert.alert('خطأ', error.message);
+  const reset = () => {
+    setResult(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigate(-1)} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← رجوع</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>عد النحل</Text>
-      </View>
+    <div className="flex flex-col min-h-screen pb-20">
+      <Header title="عد النحل" subtitle="باستخدام الذكاء الاصطناعي" />
 
-      <View style={styles.modeToggle}>
-        <TouchableOpacity
-          style={[styles.modeButton, !useOfflineMode && styles.modeButtonActive]}
-          onPress={() => setUseOfflineMode(false)}
-        >
-          <Text style={[styles.modeButtonText, !useOfflineMode && styles.modeButtonTextActive]}>
-            عبر الإنترنت
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.modeButton, useOfflineMode && styles.modeButtonActive]}
-          onPress={() => setUseOfflineMode(true)}
-        >
-          <Text style={[styles.modeButtonText, useOfflineMode && styles.modeButtonTextActive]}>
-            أوفلاين
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <div className="flex-1 px-4 py-4 space-y-4">
+        <div className="flex gap-2">
+          <button onClick={() => setMode('online')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode === 'online' ? 'bg-honey text-white' : 'bg-bee-border text-bee-muted'}`}>
+            <Wifi size={16} /> عبر الإنترنت
+          </button>
+          <button onClick={() => setMode('offline')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode === 'offline' ? 'bg-honey text-white' : 'bg-bee-border text-bee-muted'}`}>
+            <WifiOff size={16} /> أوفلاين
+          </button>
+        </div>
 
-      <BeeCounter
-        onCountComplete={handleCountComplete}
-        onError={handleError}
-        useOfflineMode={useOfflineMode}
-      />
+        {!imagePreview ? (
+          <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-bee-border rounded-2xl">
+            <Camera size={48} className="text-honey mb-4" />
+            <p className="text-sm text-bee-muted mb-4">اختر صورة لعد النحل</p>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+            <Button onClick={() => fileInputRef.current?.click()} disabled={loading}>
+              {loading ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
+              اختر صورة
+            </Button>
+          </div>
+        ) : (
+          <>
+            <Card className="overflow-hidden p-0">
+              <img src={imagePreview} alt=" bee" className="w-full h-48 object-cover" />
+            </Card>
 
-      {result && (
-        <ScrollView style={styles.resultsContainer}>
-          <View style={styles.resultCard}>
-            <Text style={styles.resultLabel}>عدد النحل المكتشف</Text>
-            <Text style={styles.resultValue}>{result.count}</Text>
-          </View>
+            {loading ? (
+              <div className="flex flex-col items-center py-8">
+                <Loader2 className="animate-spin text-honey mb-3" size={32} />
+                <p className="text-sm text-bee-muted">جاري تحليل الصورة...</p>
+              </div>
+            ) : result ? (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <Card>
+                    <div className="text-center">
+                      <p className="text-3xl font-bold text-honey">{result.count}</p>
+                      <p className="text-xs text-bee-muted mt-1">عدد النحل</p>
+                    </div>
+                  </Card>
+                  <Card>
+                    <div className="text-center">
+                      <p className="text-3xl font-bold text-blue-500">{(result.confidence * 100).toFixed(1)}%</p>
+                      <p className="text-xs text-bee-muted mt-1">متوسط الثقة</p>
+                    </div>
+                  </Card>
+                </div>
 
-          <View style={styles.resultCard}>
-            <Text style={styles.resultLabel}>متوسط الثقة</Text>
-            <Text style={styles.resultValue}>{(result.confidence * 100).toFixed(1)}%</Text>
-          </View>
+                {result.detections && result.detections.length > 0 && (
+                  <Card>
+                    <h4 className="font-bold text-sm mb-2">الاكتشافات ({result.detections.length})</h4>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {result.detections.slice(0, 10).map((d, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs">
+                          <span className="text-bee-muted">نحلة #{i + 1}</span>
+                          <span className="font-medium">{(d.confidence * 100).toFixed(1)}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
 
-          <View style={styles.resultCard}>
-            <Text style={styles.resultLabel}>الوقت</Text>
-            <Text style={styles.resultValue}>
-              {new Date(result.timestamp).toLocaleTimeString('ar-SA')}
-            </Text>
-          </View>
+                <Card className="bg-green-50 border-green-200">
+                  <p className="text-sm text-green-700">
+                    <strong>الوقت:</strong> {new Date(result.timestamp).toLocaleTimeString('ar-SA')}
+                  </p>
+                </Card>
+              </>
+            ) : null}
 
-          <TouchableOpacity
-            style={styles.saveButton}
-            onPress={() => {
-              Alert.alert('نجاح', 'تم حفظ النتائج');
-            }}
-          >
-            <Text style={styles.saveButtonText}>حفظ النتائج</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      )}
-    </View>
+            <div className="flex gap-3 pt-2">
+              <Button variant="secondary" fullWidth onClick={reset}>
+                <RotateCcw size={16} /> صورة جديدة
+              </Button>
+              <Button fullWidth disabled={!result} onClick={() => toast.success('تم حفظ النتائج')}>
+                حفظ النتائج
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF9EE',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    paddingTop: 50,
-    backgroundColor: '#E6A23C',
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontSize: 16,
-  },
-  title: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  modeToggle: {
-    flexDirection: 'row',
-    padding: 16,
-    gap: 8,
-  },
-  modeButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
-    alignItems: 'center',
-  },
-  modeButtonActive: {
-    backgroundColor: '#E6A23C',
-  },
-  modeButtonText: {
-    color: '#666',
-    fontWeight: '600',
-  },
-  modeButtonTextActive: {
-    color: '#fff',
-  },
-  resultsContainer: {
-    flex: 1,
-    padding: 16,
-  },
-  resultCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  resultLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  resultValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  saveButton: {
-    backgroundColor: '#2ecc71',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});

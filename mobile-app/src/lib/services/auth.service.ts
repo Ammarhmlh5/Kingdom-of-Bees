@@ -27,19 +27,54 @@ export class AuthService {
     return result;
   }
 
+  static async googleLogin(idToken: string): Promise<{ user: User; token: string }> {
+    const { data } = await apiClient.post('/auth/google', { idToken });
+    const result = data.data || data;
+    if (result.token) {
+      await setSetting('auth_token', result.token);
+    }
+    if (result.user) {
+      await setSetting('user', JSON.stringify(result.user));
+    }
+    return result;
+  }
+
   static async logout(): Promise<void> {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch {
+      // ignore
+    }
     await setSetting('auth_token', '');
     await setSetting('user', '');
   }
 
   static async getCurrentUser(): Promise<User | null> {
-    const userStr = await getSetting('user');
-    if (!userStr) return null;
+    const token = await getSetting('auth_token');
+    if (!token) return null;
     try {
-      return JSON.parse(userStr);
+      const userStr = await getSetting('user');
+      if (userStr) {
+        return JSON.parse(userStr);
+      }
     } catch {
       return null;
     }
+    return null;
+  }
+
+  static async refreshUser(): Promise<User | null> {
+    try {
+      const { data } = await apiClient.get('/auth/me');
+      const user = data.data || data;
+      if (user) {
+        await setSetting('user', JSON.stringify(user));
+        return user;
+      }
+    } catch {
+      return null;
+    }
+    return null;
   }
 
   static async isAuthenticated(): Promise<boolean> {
