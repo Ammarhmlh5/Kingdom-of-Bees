@@ -5,15 +5,17 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Plus, Bug, AlertTriangle, CheckCircle2, Clock, BookOpen, ChevronLeft, Filter, Loader2 } from 'lucide-react';
 import apiClient from '@/lib/apiClient';
+import { toast } from 'sonner';
 
 interface DiseaseRecord {
   id: string;
   diseaseName: string;
+  severity?: string;
   status: 'ACTIVE' | 'TREATED' | 'SUSPECTED';
   hiveId: string;
-  hive?: { hiveNumber: string };
+  hive?: { name: string };
   dateReported: string;
-  symptoms?: string;
+  treatment?: string;
 }
 
 interface HiveOption {
@@ -26,6 +28,12 @@ const statusConfig: Record<string, { bg: string; label: string; icon: React.JSX.
   ACTIVE: { bg: 'bg-red-100 text-red-700', label: 'نشط', icon: <AlertTriangle size={12} /> },
   TREATED: { bg: 'bg-green-100 text-green-700', label: 'تم العلاج', icon: <CheckCircle2 size={12} /> },
   SUSPECTED: { bg: 'bg-yellow-100 text-yellow-700', label: 'مُشتبه', icon: <Clock size={12} /> },
+};
+
+const severityConfig: Record<string, { label: string; color: string }> = {
+  mild: { label: 'خفيف', color: 'text-yellow-600' },
+  moderate: { label: 'متوسط', color: 'text-orange-600' },
+  severe: { label: 'شديد', color: 'text-red-600' },
 };
 
 export default function HealthPage() {
@@ -46,7 +54,8 @@ export default function HealthPage() {
     try {
       setLoading(true);
       const response = await apiClient.get(`/apiaries/${apiaryId}/diseases`);
-      setRecords(response.data.data || []);
+      const diseaseData = response.data?.data !== undefined ? response.data.data : response.data;
+      setRecords(Array.isArray(diseaseData) ? diseaseData : []);
     } catch {
       setRecords([]);
     } finally {
@@ -59,7 +68,8 @@ export default function HealthPage() {
     setLoadingHives(true);
     try {
       const { data } = await apiClient.get(`/apiaries/${apiaryId}/hives`);
-      setHives(data.data || data || []);
+      const hivesData = data?.data !== undefined ? data.data : data;
+      setHives(Array.isArray(hivesData) ? hivesData : []);
     } catch {
       try {
         const { getAll } = await import('@/lib/db');
@@ -70,6 +80,16 @@ export default function HealthPage() {
       }
     } finally {
       setLoadingHives(false);
+    }
+  };
+
+  const handleMarkTreated = async (recordId: string) => {
+    try {
+      await apiClient.put(`/apiaries/${apiaryId}/diseases/${recordId}`, { status: 'TREATED' });
+      setRecords(prev => prev.map(r => r.id === recordId ? { ...r, status: 'TREATED' as const } : r));
+      toast.success('تم تحديث الحالة إلى: تم العلاج');
+    } catch {
+      toast.error('حدث خطأ أثناء التحديث');
     }
   };
 
@@ -85,6 +105,8 @@ export default function HealthPage() {
 
   const filtered = records.filter(r => filter === 'all' || r.status === filter);
   const activeCount = records.filter(r => r.status === 'ACTIVE').length;
+  const treatedCount = records.filter(r => r.status === 'TREATED').length;
+  const suspectedCount = records.filter(r => r.status === 'SUSPECTED').length;
 
   if (loading) {
     return (
@@ -102,7 +124,22 @@ export default function HealthPage() {
       <Header title="الصحة والأمراض" subtitle={`${activeCount} حالة نشطة`} />
 
       <div className="flex-1 px-4 py-4 space-y-4">
-        <Card className="bg-blue-50 border-blue-200" onClick={() => {}}>
+        <div className="grid grid-cols-3 gap-2">
+          <Card className="text-center py-3">
+            <p className="text-lg font-bold text-red-600">{activeCount}</p>
+            <p className="text-[10px] text-bee-muted">نشط</p>
+          </Card>
+          <Card className="text-center py-3">
+            <p className="text-lg font-bold text-yellow-600">{suspectedCount}</p>
+            <p className="text-[10px] text-bee-muted">مُشتبه</p>
+          </Card>
+          <Card className="text-center py-3">
+            <p className="text-lg font-bold text-green-600">{treatedCount}</p>
+            <p className="text-[10px] text-bee-muted">تم العلاج</p>
+          </Card>
+        </div>
+
+        <Card className="bg-blue-50 border-blue-200" onClick={() => toast.info('قريباً — مكتبة الأمراض الشائعة')}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <BookOpen size={20} className="text-blue-600" />
@@ -138,22 +175,39 @@ export default function HealthPage() {
           filtered.map(record => (
             <Card key={record.id}>
               <div className="flex items-start justify-between">
-                <div className="space-y-1">
+                <div className="space-y-1 flex-1">
                   <div className="flex items-center gap-2">
                     <Bug size={14} className="text-honey" />
                     <h3 className="font-bold text-sm">{record.diseaseName}</h3>
+                    {record.severity && severityConfig[record.severity] && (
+                      <span className={`text-[10px] font-medium ${severityConfig[record.severity].color}`}>
+                        {severityConfig[record.severity].label}
+                      </span>
+                    )}
                   </div>
-                  {record.hive && <p className="text-xs text-bee-muted">خلية رقم {record.hive.hiveNumber}</p>}
+                  {record.hive && <p className="text-xs text-bee-muted">{record.hive.name}</p>}
                   <div className="flex items-center gap-2 text-xs text-bee-muted">
                     <Clock size={12} />
                     {new Date(record.dateReported).toLocaleDateString('ar-SA')}
                   </div>
-                  {record.symptoms && <p className="text-xs text-bee-muted mt-1">{record.symptoms}</p>}
+                  {record.treatment && (
+                    <p className="text-xs text-honey mt-1">العلاج: {record.treatment}</p>
+                  )}
                 </div>
-                <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full ${statusConfig[record.status]?.bg || 'bg-gray-100 text-gray-700'}`}>
-                  {statusConfig[record.status]?.icon || <Clock size={12} />}
-                  {statusConfig[record.status]?.label || record.status}
-                </span>
+                <div className="flex flex-col items-end gap-2">
+                  <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full ${statusConfig[record.status]?.bg || 'bg-gray-100 text-gray-700'}`}>
+                    {statusConfig[record.status]?.icon || <Clock size={12} />}
+                    {statusConfig[record.status]?.label || record.status}
+                  </span>
+                  {record.status === 'ACTIVE' && (
+                    <button
+                      onClick={() => handleMarkTreated(record.id)}
+                      className="text-[10px] text-green-600 font-medium hover:text-green-700"
+                    >
+                      ✓ تم العلاج
+                    </button>
+                  )}
+                </div>
               </div>
             </Card>
           ))

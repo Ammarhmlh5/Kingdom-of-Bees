@@ -96,11 +96,19 @@ export async function markSynced(id: number): Promise<void> {
 
 export async function getSetting(key: string): Promise<string | null> {
   const db = await getDB();
-  const item = await db.get('local_settings', key);
+  const all = await db.getAll('local_settings');
+  const item = all.find((i: any) => i.key === key);
   return item?.value ?? null;
 }
 
 export async function setSetting(key: string, value: string): Promise<void> {
   const db = await getDB();
-  await db.put('local_settings', { key, value });
+  const all = await db.getAll('local_settings');
+  const existing = all.find((i: any) => i.key === key);
+  if (existing) {
+    existing.value = value;
+    await db.put('local_settings', existing);
+  } else {
+    await db.add('local_settings', { key, value });
+  }
 }

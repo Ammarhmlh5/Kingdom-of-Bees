@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, Textarea } from '@/components/ui/Input';
+import apiClient from '@/lib/apiClient';
 import { add, addToSyncQueue } from '@/lib/db';
 import { toast } from 'sonner';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
@@ -18,37 +19,38 @@ export default function AddApiaryPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) {
+    if (!name.trim()) {
       toast.error('يرجى إدخال اسم المنحل');
       return;
     }
 
     setLoading(true);
+    const apiaryData = {
+      name: name.trim(),
+      type,
+      location: location.trim() || undefined,
+      notes: notes.trim() || undefined,
+      createdAt: new Date().toISOString(),
+    };
+
     try {
-      const apiaryData = {
-        name,
-        type,
-        location: location || undefined,
-        notes: notes || undefined,
-        createdAt: new Date().toISOString(),
-      };
-
-      const id = await add('apiaries', apiaryData);
-
       if (isOnline) {
         try {
-          const { apiClient } = await import('@/lib/apiClient');
-          await apiClient.post('/apiaries', { ...apiaryData, id });
+          await apiClient.post('/apiaries', apiaryData);
+          toast.success('تم إضافة المنحل بنجاح');
+          navigate('/');
+          return;
         } catch {
-          await addToSyncQueue('apiaries', 'create', { ...apiaryData, id });
+          // fall through to offline save
         }
-      } else {
-        await addToSyncQueue('apiaries', 'create', { ...apiaryData, id });
       }
 
-      toast.success('تم إضافة المنحل بنجاح');
+      // Offline fallback: save to IndexedDB + sync queue
+      const id = await add('apiaries', apiaryData);
+      await addToSyncQueue('apiaries', 'create', { ...apiaryData, id });
+      toast.success('تم الحفظ محلياً وسيتم المزامنة لاحقاً');
       navigate('/');
-    } catch (err) {
+    } catch {
       toast.error('حدث خطأ أثناء الحفظ');
     } finally {
       setLoading(false);

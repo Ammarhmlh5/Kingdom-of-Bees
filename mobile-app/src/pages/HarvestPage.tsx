@@ -28,6 +28,7 @@ export default function HarvestPage() {
   const [dateTo, setDateTo] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [hives, setHives] = useState<{ id: string; name: string }[]>([]);
   const [form, setForm] = useState({
     harvestType: 'عسل', harvestDate: new Date().toISOString().split('T')[0],
     totalQuantity: '', unit: 'كجم', hiveId: '', notes: '',
@@ -35,11 +36,38 @@ export default function HarvestPage() {
 
   useEffect(() => { loadHarvests(); }, []);
 
+  const loadHives = async () => {
+    try {
+      const { data } = await apiClient.get('/apiaries');
+      const apiaries = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+      const allHives: { id: string; name: string }[] = [];
+      for (const apiary of apiaries) {
+        try {
+          const { data: hivesData } = await apiClient.get(`/apiaries/${apiary.id}/hives`);
+          const list = hivesData?.data !== undefined ? hivesData.data : hivesData;
+          allHives.push(...(Array.isArray(list) ? list : []).map((h: any) => ({ id: String(h.id), name: `${h.name} (${apiary.name})` })));
+        } catch { /* skip failed apiary */ }
+      }
+      if (allHives.length > 0) setHives(allHives);
+    } catch {
+      try {
+        const all = await getAll<any>('hives');
+        setHives(all.map((h: any) => ({ id: String(h.id), name: h.name })));
+      } catch { /* ignore */ }
+    }
+  };
+
+  const handleAddOpen = () => {
+    loadHives();
+    setAddOpen(true);
+  };
+
   const loadHarvests = async () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/harvest/my');
-      setHarvests(response.data.data || []);
+      const harvestData = response.data?.data !== undefined ? response.data.data : response.data;
+      setHarvests(Array.isArray(harvestData) ? harvestData : []);
     } catch {
       const local = await getAll<HarvestRecord>('harvest_records');
       setHarvests(local);
@@ -168,7 +196,7 @@ export default function HarvestPage() {
         )}
       </div>
 
-      <button onClick={() => setAddOpen(true)}
+      <button onClick={handleAddOpen}
         className="fixed bottom-24 left-4 w-14 h-14 bg-honey text-white rounded-full shadow-lg flex items-center justify-center hover:bg-honey-dark active:scale-95 transition-all z-40">
         <Plus size={28} />
       </button>
@@ -181,6 +209,14 @@ export default function HarvestPage() {
               <button onClick={() => setAddOpen(false)} className="p-1 text-bee-muted hover:text-bee-text"><X size={20} /></button>
             </div>
             <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-bee-muted block mb-1">الخلية (اختياري)</label>
+                <select value={form.hiveId} onChange={(e) => setForm({ ...form, hiveId: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-bee-border text-sm bg-white">
+                  <option value="">بدون تحديد خلية</option>
+                  {hives.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
+                </select>
+              </div>
               <div>
                 <label className="text-xs font-medium text-bee-muted block mb-1">نوع الحصاد</label>
                 <select value={form.harvestType} onChange={(e) => setForm({ ...form, harvestType: e.target.value })}

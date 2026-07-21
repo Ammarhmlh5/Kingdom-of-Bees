@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, ArrowRight, Loader2 } from 'lucide-react';
+import { Plus, ArrowRight, Loader2, RefreshCw } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Card } from '@/components/ui/Card';
 import apiClient from '@/lib/apiClient';
 import type { Hive } from '@/types';
+
+function unwrap<T>(data: any, fallback: T): T {
+  if (data === null || data === undefined) return fallback;
+  if (data.data !== undefined && data.data !== null) return data.data as T;
+  return data as T;
+}
 
 export default function HiveListPage() {
   const { id: apiaryId } = useParams();
@@ -12,30 +18,40 @@ export default function HiveListPage() {
   const [hives, setHives] = useState<Hive[]>([]);
   const [apiaryName, setApiaryName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     loadHives();
   }, [apiaryId]);
 
-  const loadHives = async () => {
-    setLoading(true);
+  const loadHives = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+    setError(false);
+    setErrorMsg('');
     try {
       const [hivesRes, apiaryRes] = await Promise.all([
         apiClient.get(`/apiaries/${apiaryId}/hives`),
         apiClient.get(`/apiaries/${apiaryId}`),
       ]);
-      setHives(hivesRes.data.data || hivesRes.data || []);
-      setApiaryName(apiaryRes.data.name || '');
-    } catch {
-      try {
-        const { getAll } = await import('@/lib/db');
-        const allHives = await getAll<Hive>('hives');
-        setHives(allHives.filter(h => String(h.apiaryId) === String(apiaryId)));
-      } catch {
-        // ignore
-      }
+
+      const hiveList: any[] = unwrap(hivesRes.data, []);
+      setHives(Array.isArray(hiveList) ? hiveList : []);
+
+      const apiaryData: any = unwrap(apiaryRes.data, null);
+      setApiaryName(apiaryData?.name || '');
+
+      console.log(`[HiveList] Loaded ${Array.isArray(hiveList) ? hiveList.length : 0} hives for apiary ${apiaryId}`);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.message || 'Unknown error';
+      console.error('[HiveList] Failed to load hives:', msg);
+      setError(true);
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -72,8 +88,30 @@ export default function HiveListPage() {
     <div className="flex flex-col min-h-screen pb-20">
       <Header title={apiaryName || 'الخلايا'} subtitle={`${hives.length} خلية`} />
 
+      {refreshing && (
+        <div className="px-4 py-2">
+          <div className="flex items-center justify-center gap-2 text-xs text-honey">
+            <Loader2 className="animate-spin" size={14} />
+            <span>جاري التحديث...</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 px-4 py-4">
-        {hives.length === 0 ? (
+        {error && hives.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-bee-muted">
+            <div className="text-5xl mb-4">⚠️</div>
+            <p className="text-lg font-medium mb-2">تعذر تحميل البيانات</p>
+            <p className="text-sm mb-4 text-red-500">{errorMsg}</p>
+            <button
+              onClick={() => loadHives(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-honey text-white rounded-lg text-sm font-medium"
+            >
+              <RefreshCw size={14} />
+              إعادة المحاولة
+            </button>
+          </div>
+        ) : hives.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-bee-muted">
             <div className="text-5xl mb-4">🐝</div>
             <p className="text-lg font-medium mb-2">لا توجد خلايا</p>
@@ -110,12 +148,20 @@ export default function HiveListPage() {
         )}
       </div>
 
-      <button
-        onClick={() => navigate(`/apiary/${apiaryId}/hives/add`)}
-        className="fixed bottom-24 left-4 w-14 h-14 bg-honey text-white rounded-full shadow-lg flex items-center justify-center hover:bg-honey-dark active:scale-95 transition-all z-40"
-      >
-        <Plus size={28} />
-      </button>
+      <div className="fixed bottom-24 left-4 flex flex-col gap-3 z-40">
+        <button
+          onClick={() => loadHives(true)}
+          className="w-14 h-14 bg-white border border-bee-border text-bee-muted rounded-full shadow-lg flex items-center justify-center hover:bg-bee-border active:scale-95 transition-all"
+        >
+          <RefreshCw size={20} className={refreshing ? 'animate-spin' : ''} />
+        </button>
+        <button
+          onClick={() => navigate(`/apiary/${apiaryId}/hives/add`)}
+          className="w-14 h-14 bg-honey text-white rounded-full shadow-lg flex items-center justify-center hover:bg-honey-dark active:scale-95 transition-all"
+        >
+          <Plus size={28} />
+        </button>
+      </div>
     </div>
   );
 }

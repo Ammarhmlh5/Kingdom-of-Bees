@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
@@ -32,25 +32,38 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      const { GoogleSignin } = await import('@react-native-google-signin/google-signin');
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      const idToken = (userInfo as any).idToken || (userInfo as any).user?.id;
-      if (idToken) {
-        setLoading(true);
-        await googleLogin(idToken);
-        toast.success('تم تسجيل الدخول بنجاح');
-        navigate('/');
-      }
-    } catch (err: any) {
-      if (err.code === 'SIGN_IN_CANCELLED') return;
-      toast.error('خطأ في تسجيل الدخول بجوجل');
-    } finally {
-      setLoading(false);
+  const handleGoogleLogin = () => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      toast.error('تسجيل الدخول بجوجل غير مُعدّ');
+      return;
     }
+    const redirectUri = `${window.location.origin}/login`;
+    const scope = 'email profile openid';
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token id_token&scope=${encodeURIComponent(scope)}&nonce=nonce_${Date.now()}&prompt=select_account`;
+    window.location.href = url;
   };
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash.includes('access_token')) return;
+    const params = new URLSearchParams(hash.substring(1));
+    const accessToken = params.get('access_token');
+    if (accessToken) {
+      setLoading(true);
+      googleLogin(accessToken)
+        .then(() => {
+          toast.success('تم تسجيل الدخول بنجاح');
+          navigate('/');
+          window.history.replaceState(null, '', window.location.pathname);
+        })
+        .catch(() => {
+          toast.error('خطأ في تسجيل الدخول بجوجل');
+          window.history.replaceState(null, '', window.location.pathname);
+        })
+        .finally(() => setLoading(false));
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-bee-bg">

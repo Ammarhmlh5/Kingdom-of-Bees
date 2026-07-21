@@ -28,6 +28,7 @@ export default function TeamPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
+  const [removeConfirm, setRemoveConfirm] = useState<{ open: boolean; userId: string; name: string }>({ open: false, userId: '', name: '' });
 
   useEffect(() => { loadMembers(); }, [apiaryId]);
 
@@ -36,7 +37,8 @@ export default function TeamPage() {
     try {
       setLoading(true);
       const response = await apiClient.get(`/apiaries/${apiaryId}/members`);
-      setMembers(response.data.data || []);
+      const membersData = response.data?.data !== undefined ? response.data.data : response.data;
+      setMembers(Array.isArray(membersData) ? membersData : []);
     } catch {
       setMembers([]);
     } finally {
@@ -124,7 +126,7 @@ export default function TeamPage() {
                   </div>
                 </div>
                 {member.role !== 'owner' && (
-                  <button onClick={() => handleRemove(member.userId)}
+                  <button onClick={() => setRemoveConfirm({ open: true, userId: member.userId, name: member.name })}
                     className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                     <Trash2 size={16} />
                   </button>
@@ -159,6 +161,33 @@ export default function TeamPage() {
               {inviting ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
               {inviting ? 'جاري الإرسال...' : 'إرسال الدعوة'}
             </Button>
+          </div>
+        </div>
+      )}
+
+      {removeConfirm.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-base">تأكيد الإزالة</h3>
+              <button onClick={() => setRemoveConfirm({ open: false, userId: '', name: '' })} className="p-1 text-bee-muted hover:text-bee-text">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="text-sm text-bee-text mb-6">
+              هل أنت متأكد من إزالة <strong>"{removeConfirm.name}"</strong> من الفريق؟
+            </p>
+            <div className="flex gap-3">
+              <Button variant="secondary" fullWidth onClick={() => setRemoveConfirm({ open: false, userId: '', name: '' })}>
+                إلغاء
+              </Button>
+              <Button variant="danger" fullWidth onClick={async () => {
+                await handleRemove(removeConfirm.userId);
+                setRemoveConfirm({ open: false, userId: '', name: '' });
+              }}>
+                إزالة
+              </Button>
+            </div>
           </div>
         </div>
       )}

@@ -28,6 +28,7 @@ export default function FeedingPage() {
   const [type, setType] = useState('sugar_syrup_1_1');
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
+  const [nextDate, setNextDate] = useState('');
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(true);
@@ -38,7 +39,8 @@ export default function FeedingPage() {
     if (apiaryId) {
       try {
         const { data } = await apiClient.get(`/apiaries/${apiaryId}/feeding`);
-        const items = data.data || data || [];
+        const feedingData = data?.data !== undefined ? data.data : data;
+        const items = Array.isArray(feedingData) ? feedingData : [];
         setHistory(items.filter((r: any) => String(r.hiveId) === String(hiveId)).slice(0, 20));
       } catch {
         const records = await getAll<any>('feeding_records');
@@ -59,13 +61,13 @@ export default function FeedingPage() {
 
     setLoading(true);
     try {
-      const data = { hiveId, type, amount, date: new Date().toISOString(), notes: notes || undefined };
+      const data = { hiveId, type, amount, date: new Date().toISOString(), notes: notes || undefined, nextFeedingDate: nextDate || undefined };
 
       if (isOnline && apiaryId) {
         try {
           await apiClient.post(`/apiaries/${apiaryId}/feeding`, data);
           toast.success('تم تسجيل التغذية بنجاح');
-          setAmount(''); setNotes(''); setShowForm(false); loadHistory();
+          setAmount(''); setNotes(''); setNextDate(''); setShowForm(false); loadHistory();
           return;
         } catch {
           // fall through
@@ -104,6 +106,7 @@ export default function FeedingPage() {
             <Select label="نوع التغذية" value={type} onChange={(e) => setType(e.target.value)}
               options={Object.entries(FEEDING_TYPES).map(([value, label]) => ({ value, label }))} />
             <Input label="الكمية" placeholder="مثال: 500 مل" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Input label="التغذية التالية (اختياري)" type="date" value={nextDate} onChange={(e) => setNextDate(e.target.value)} />
             <Textarea label="ملاحظات (اختياري)" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
 
             <Card className="bg-blue-50 border-blue-200">
@@ -131,6 +134,9 @@ export default function FeedingPage() {
                     <span className="text-sm font-bold text-honey">{FEEDING_TYPES[record.type] || record.type}</span>
                     <p className="text-sm mt-1">الكمية: {record.amount}</p>
                     {record.notes && <p className="text-xs text-bee-muted mt-1">{record.notes}</p>}
+                    {record.nextFeedingDate && (
+                      <p className="text-xs text-honey mt-1">التغذية التالية: {new Date(record.nextFeedingDate).toLocaleDateString('ar-SA')}</p>
+                    )}
                   </div>
                   <span className="text-xs text-bee-muted">{new Date(record.date).toLocaleDateString('ar-SA')}</span>
                 </div>

@@ -48,13 +48,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 body: JSON.stringify({ email, password }),
             });
 
-            const data = await response.json();
+            const responseData = await response.json();
 
             if (!response.ok) {
-                return { success: false, error: data.error || 'فشل تسجيل الدخول' };
+                return { success: false, error: responseData.error || 'فشل تسجيل الدخول' };
             }
 
-            const { accessToken, user: userData } = data;
+            const { accessToken, user: userData } = responseData.data || responseData;
             setAuthData(accessToken, userData);
             setToken(accessToken);
             setUser(userData);
@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 return { success: false, error: responseData.error || 'فشل إنشاء الحساب' };
             }
 
-            const { accessToken, user: userData } = responseData;
+            const { accessToken, user: userData } = responseData.data || responseData;
             setAuthData(accessToken, userData);
             setToken(accessToken);
             setUser(userData);
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 return { success: false, error: data.error || 'فشل تسجيل الدخول عبر Google' };
             }
 
-            const { accessToken, user: userData } = data;
+            const { accessToken, user: userData } = data.data || data;
             setAuthData(accessToken, userData);
             setToken(accessToken);
             setUser(userData);

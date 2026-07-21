@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { BottomNav } from '@/components/BottomNav';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
@@ -43,32 +44,32 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
-        <Route path="/" element={<AppLayout><HomePage /></AppLayout>} />
-        <Route path="/shop" element={<AppLayout><ShopPage /></AppLayout>} />
-        <Route path="/explore" element={<AppLayout><ExplorePage /></AppLayout>} />
-        <Route path="/weather" element={<AppLayout><WeatherPage /></AppLayout>} />
-        <Route path="/flora" element={<AppLayout><FloraPage /></AppLayout>} />
-        <Route path="/advisor" element={<AppLayout><AdvisorPage /></AppLayout>} />
-        <Route path="/guide" element={<AppLayout><GuidePage /></AppLayout>} />
+        <Route path="/" element={<ProtectedRoute><AppLayout><HomePage /></AppLayout></ProtectedRoute>} />
+        <Route path="/shop" element={<ProtectedRoute><AppLayout><ShopPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/explore" element={<ProtectedRoute><AppLayout><ExplorePage /></AppLayout></ProtectedRoute>} />
+        <Route path="/weather" element={<ProtectedRoute><AppLayout><WeatherPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/flora" element={<ProtectedRoute><AppLayout><FloraPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/advisor" element={<ProtectedRoute><AppLayout><AdvisorPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/guide" element={<ProtectedRoute><AppLayout><GuidePage /></AppLayout></ProtectedRoute>} />
 
-        <Route path="/apiary/add" element={<AddApiaryPage />} />
-        <Route path="/apiary/:id/hives" element={<HiveListPage />} />
-        <Route path="/apiary/:id/hives/add" element={<AddHivePage />} />
+        <Route path="/apiary/add" element={<ProtectedRoute><AddApiaryPage /></ProtectedRoute>} />
+        <Route path="/apiary/:id/hives" element={<ProtectedRoute><HiveListPage /></ProtectedRoute>} />
+        <Route path="/apiary/:id/hives/add" element={<ProtectedRoute><AddHivePage /></ProtectedRoute>} />
 
-        <Route path="/hive/:id" element={<HiveDetailPage />} />
-        <Route path="/hive/:id/inspect" element={<InspectionPage />} />
-        <Route path="/hive/:id/disease" element={<DiseasePage />} />
-        <Route path="/hive/:id/queen" element={<QueenPage />} />
-        <Route path="/hive/:id/merge" element={<MergePage />} />
-        <Route path="/hive/:id/feed" element={<FeedingPage />} />
-        <Route path="/hive/:id/frames" element={<FramesPage />} />
+        <Route path="/hive/:id" element={<ProtectedRoute><HiveDetailPage /></ProtectedRoute>} />
+        <Route path="/hive/:id/inspect" element={<ProtectedRoute><InspectionPage /></ProtectedRoute>} />
+        <Route path="/hive/:id/disease" element={<ProtectedRoute><DiseasePage /></ProtectedRoute>} />
+        <Route path="/hive/:id/queen" element={<ProtectedRoute><QueenPage /></ProtectedRoute>} />
+        <Route path="/hive/:id/merge" element={<ProtectedRoute><MergePage /></ProtectedRoute>} />
+        <Route path="/hive/:id/feed" element={<ProtectedRoute><FeedingPage /></ProtectedRoute>} />
+        <Route path="/hive/:id/frames" element={<ProtectedRoute><FramesPage /></ProtectedRoute>} />
 
-        <Route path="/settings" element={<AppLayout><SettingsPage /></AppLayout>} />
-        <Route path="/harvest" element={<AppLayout><HarvestPage /></AppLayout>} />
-        <Route path="/alerts" element={<AppLayout><AlertsPage /></AppLayout>} />
-        <Route path="/apiary/:id/team" element={<AppLayout><TeamPage /></AppLayout>} />
-        <Route path="/apiary/:id/health" element={<AppLayout><HealthPage /></AppLayout>} />
-        <Route path="/bee-counter" element={<BeeCounterPage />} />
+        <Route path="/settings" element={<ProtectedRoute><AppLayout><SettingsPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/harvest" element={<ProtectedRoute><AppLayout><HarvestPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/alerts" element={<ProtectedRoute><AppLayout><AlertsPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/apiary/:id/team" element={<ProtectedRoute><AppLayout><TeamPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/apiary/:id/health" element={<ProtectedRoute><AppLayout><HealthPage /></AppLayout></ProtectedRoute>} />
+        <Route path="/bee-counter" element={<ProtectedRoute><BeeCounterPage /></ProtectedRoute>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

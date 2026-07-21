@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Droplets, Stethoscope, Bug, Grid2X2, ChevronDown } from 'lucide-react';
+import { Plus, Droplets, Stethoscope, Grid2X2, ChevronDown } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { ApiaryCard } from '@/components/ApiaryCard';
 import { ApiaryContextSelector } from '@/components/ApiaryContextSelector';
@@ -10,12 +10,19 @@ import { SyncService } from '@/lib/services/sync.service';
 import apiClient from '@/lib/apiClient';
 import type { Apiary } from '@/types';
 
+function unwrap<T>(data: any, fallback: T): T {
+  if (data === null || data === undefined) return fallback;
+  if (data.data !== undefined && data.data !== null) return data.data as T;
+  return data as T;
+}
+
 export default function HomePage() {
   const navigate = useNavigate();
   const { user, logout, loading: authLoading } = useAuth();
   const [apiaries, setApiaries] = useState<Apiary[]>([]);
   const [selectedApiaryId, setSelectedApiaryId] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [stats, setStats] = useState({ hiveCount: 0, inspectionCount: 0, honeyHarvest: 0 });
 
   useEffect(() => {
@@ -25,20 +32,28 @@ export default function HomePage() {
   }, [user, authLoading, navigate]);
 
   const loadApiaries = useCallback(async () => {
+    setApiError(null);
     try {
-      const { data } = await apiClient.get('/apiaries/my');
-      const list = Array.isArray(data) ? data : (data.data || []);
-      setApiaries(list);
-    } catch {
-      try {
-        const { getAll } = await import('@/lib/db');
-        const data = await getAll<Apiary>('apiaries');
-        setApiaries(data);
-      } catch {
-        // ignore
-      }
+      const { data: raw } = await apiClient.get('/apiaries/');
+      const list: any[] = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : []);
+
+      const mapped = list.map((a: any) => ({
+        ...a,
+        hiveCount: a._count?.hives || a.currentHiveCount || 0,
+        location: a.address || '',
+        latitude: a.locationLat ? Number(a.locationLat) : undefined,
+        longitude: a.locationLng ? Number(a.locationLng) : undefined,
+      }));
+
+      console.log(`[HomePage] Loaded ${mapped.length} apiaries from server for user ${user?.id}`);
+      setApiaries(mapped);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.message || 'Unknown error';
+      console.error('[HomePage] Failed to load apiaries:', msg);
+      setApiError(`فشل تحميل المناحل: ${msg}`);
+      setApiaries([]);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (user) loadApiaries();
@@ -46,16 +61,27 @@ export default function HomePage() {
 
   const loadStats = useCallback(async (apiaryId: string) => {
     try {
-      const { data } = await apiClient.get(`/apiaries/${apiaryId}`);
-      setStats({
-        hiveCount: data._count?.hives || data.hiveCount || 0,
-        inspectionCount: data._count?.inspections || data.inspectionCount || 0,
-        honeyHarvest: data.honeyHarvest || 0,
-      });
+      const selected = apiaries.find(a => a.id === apiaryId);
+      const hiveCount = selected?.hiveCount ?? 0;
+
+      let inspectionCount = 0;
+      let honeyHarvest = 0;
+      try {
+        const [inspRes, statsRes] = await Promise.all([
+          apiClient.get(`/apiaries/${apiaryId}/inspections`).catch(() => ({ data: [] })),
+          apiClient.get(`/apiaries/${apiaryId}/stats/dashboard`).catch(() => ({ data: {} })),
+        ]);
+        const inspData = inspRes.data?.data !== undefined ? inspRes.data.data : inspRes.data;
+        inspectionCount = Array.isArray(inspData) ? inspData.length : 0;
+        const statsData = statsRes.data?.data !== undefined ? statsRes.data.data : statsRes.data;
+        honeyHarvest = statsData?.honeyProduced || statsData?.totalHarvest || 0;
+      } catch { /* use defaults */ }
+
+      setStats({ hiveCount, inspectionCount, honeyHarvest });
     } catch {
       setStats({ hiveCount: 0, inspectionCount: 0, honeyHarvest: 0 });
     }
-  }, []);
+  }, [apiaries]);
 
   useEffect(() => {
     if (selectedApiaryId) loadStats(selectedApiaryId);
@@ -112,7 +138,12 @@ export default function HomePage() {
       {!selectedApiaryId ? (
         <div className="flex-1 px-4 py-4">
           <h2 className="text-lg font-bold mb-3">المناحل</h2>
-          {apiaries.length === 0 ? (
+          {apiError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+              {apiError}
+            </div>
+          )}
+          {apiaries.length === 0 && !apiError ? (
             <div className="flex flex-col items-center justify-center py-16 text-bee-muted">
               <div className="text-5xl mb-4">🍯</div>
               <p className="text-lg font-medium mb-2">لا توجد مناحل مسجلة</p>
@@ -167,13 +198,7 @@ export default function HomePage() {
             <Card onClick={() => navigate(`/apiary/${selectedApiaryId}/health`)}>
               <div className="flex flex-col items-center gap-2 py-3">
                 <Droplets size={28} className="text-green-500" />
-                <span className="text-sm font-medium">التغذية</span>
-              </div>
-            </Card>
-            <Card onClick={() => navigate(`/apiary/${selectedApiaryId}/health`)}>
-              <div className="flex flex-col items-center gap-2 py-3">
-                <Bug size={28} className="text-danger" />
-                <span className="text-sm font-medium">الصحة</span>
+                <span className="text-sm font-medium">التغذية والصحة</span>
               </div>
             </Card>
           </div>

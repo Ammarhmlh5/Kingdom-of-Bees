@@ -6,37 +6,40 @@ export class AuthService {
   static async login(email: string, password: string): Promise<{ user: User; token: string }> {
     const { data } = await apiClient.post('/auth/login', { email, password });
     const result = data.data || data;
-    if (result.token) {
-      await setSetting('auth_token', result.token);
+    const authToken = result.accessToken || result.token;
+    if (authToken) {
+      await setSetting('auth_token', authToken);
     }
     if (result.user) {
       await setSetting('user', JSON.stringify(result.user));
     }
-    return result;
+    return { user: result.user, token: authToken };
   }
 
   static async register(email: string, password: string, name: string): Promise<{ user: User; token: string }> {
     const { data } = await apiClient.post('/auth/register', { email, password, name });
     const result = data.data || data;
-    if (result.token) {
-      await setSetting('auth_token', result.token);
+    const authToken = result.accessToken || result.token;
+    if (authToken) {
+      await setSetting('auth_token', authToken);
     }
     if (result.user) {
       await setSetting('user', JSON.stringify(result.user));
     }
-    return result;
+    return { user: result.user, token: authToken };
   }
 
   static async googleLogin(idToken: string): Promise<{ user: User; token: string }> {
     const { data } = await apiClient.post('/auth/google', { idToken });
     const result = data.data || data;
-    if (result.token) {
-      await setSetting('auth_token', result.token);
+    const authToken = result.accessToken || result.token;
+    if (authToken) {
+      await setSetting('auth_token', authToken);
     }
     if (result.user) {
       await setSetting('user', JSON.stringify(result.user));
     }
-    return result;
+    return { user: result.user, token: authToken };
   }
 
   static async logout(): Promise<void> {

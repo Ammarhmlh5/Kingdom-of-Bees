@@ -48,7 +48,8 @@ export default function AlertsPage() {
     try {
       setLoading(true);
       const response = await apiClient.get('/alerts');
-      setAlerts(response.data.data || []);
+      const alertsData = response.data?.data !== undefined ? response.data.data : response.data;
+      setAlerts(Array.isArray(alertsData) ? alertsData : []);
     } catch {
       setAlerts([]);
     } finally {

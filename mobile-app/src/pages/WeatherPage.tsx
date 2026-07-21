@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { Card } from '@/components/ui/Card';
-import { Thermometer, Droplets, Wind, Eye, Sun, CloudRain, Cloud, Loader2, AlertTriangle, CloudSnow } from 'lucide-react';
+import { Thermometer, Droplets, Wind, Eye, Sun, CloudRain, Cloud, Loader2, AlertTriangle, CloudSnow, RefreshCw } from 'lucide-react';
 import apiClient from '@/lib/apiClient';
 
 interface WeatherAlert {
@@ -16,6 +16,7 @@ export default function WeatherPage() {
   const [error, setError] = useState(false);
   const [apiaries, setApiaries] = useState<any[]>([]);
   const [selectedApiary, setSelectedApiary] = useState<string>('');
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadApiaries();
@@ -28,7 +29,7 @@ export default function WeatherPage() {
   const loadApiaries = async () => {
     try {
       const { data } = await apiClient.get('/apiaries');
-      const list = Array.isArray(data) ? data : (data.data || []);
+      const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
       setApiaries(list);
       if (list.length > 0) {
         setSelectedApiary(list[0].id);
@@ -42,16 +43,27 @@ export default function WeatherPage() {
     }
   };
 
-  const fetchWeather = async (apiaryId: string) => {
-    setLoading(true);
+  const fetchWeather = async (apiaryId: string, isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
     try {
-      const { data } = await apiClient.get(`/weather/current/${apiaryId}`);
-      setWeather(data.data || data);
+      const { data: raw } = await apiClient.get(`/weather/current/${apiaryId}`);
+      const weatherData = raw?.data !== undefined ? raw.data : raw;
+      setWeather(weatherData);
       setError(false);
+      try { localStorage.setItem(`weather_${apiaryId}`, JSON.stringify({ data: weatherData, ts: Date.now() })); } catch { /* ignore */ }
     } catch {
-      setError(true);
+      const cached = localStorage.getItem(`weather_${apiaryId}`);
+      if (cached) {
+        const { data } = JSON.parse(cached);
+        setWeather(data);
+        setError(false);
+      } else {
+        setError(true);
+      }
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -72,35 +84,18 @@ export default function WeatherPage() {
     const visibility = w.visibility || 10;
     const conditions = (w.conditions || '').toLowerCase();
 
-    if (temp > 45) {
-      alerts.push({ type: 'heat', message: 'حرارة شديدة — لا تفتح الخلايا', severity: 'high' });
-    } else if (temp > 38) {
-      alerts.push({ type: 'heat', message: 'حرارة مرتفعة — افحص في الصباح الباكر', severity: 'medium' });
-    }
+    if (temp > 45) alerts.push({ type: 'heat', message: 'حرارة شديدة — لا تفتح الخلايا', severity: 'high' });
+    else if (temp > 38) alerts.push({ type: 'heat', message: 'حرارة مرتفعة — افحص في الصباح الباكر', severity: 'medium' });
 
-    if (temp < 5) {
-      alerts.push({ type: 'cold', message: 'برودة شديدة — تأكد من تدفئة الخلايا', severity: 'high' });
-    } else if (temp < 10) {
-      alerts.push({ type: 'cold', message: 'حرارة منخفضة — تأكد من التخزين الكافٍ', severity: 'low' });
-    }
+    if (temp < 5) alerts.push({ type: 'cold', message: 'برودة شديدة — تأكد من تدفئة الخلايا', severity: 'high' });
+    else if (temp < 10) alerts.push({ type: 'cold', message: 'حرارة منخفضة — تأكد من التخزين الكافٍ', severity: 'low' });
 
-    if (wind > 40) {
-      alerts.push({ type: 'wind', message: 'رياح عاصفية — ممنوع فتح الخلايا', severity: 'high' });
-    } else if (wind > 25) {
-      alerts.push({ type: 'wind', message: 'رياح قوية — تجنب الفتح', severity: 'medium' });
-    }
+    if (wind > 40) alerts.push({ type: 'wind', message: 'رياح عاصفية — ممنوع فتح الخلايا', severity: 'high' });
+    else if (wind > 25) alerts.push({ type: 'wind', message: 'رياح قوية — تجنب الفتح', severity: 'medium' });
 
-    if (conditions.includes('rain')) {
-      alerts.push({ type: 'rain', message: 'أمطار — لا تفتح الخلايا', severity: 'medium' });
-    }
-
-    if (humidity > 85) {
-      alerts.push({ type: 'humidity', message: 'رطوبة عالية — راقب الأمراض الفطرية', severity: 'medium' });
-    }
-
-    if (visibility < 1) {
-      alerts.push({ type: 'visibility', message: 'رؤية منخفضة جداً', severity: 'low' });
-    }
+    if (conditions.includes('rain')) alerts.push({ type: 'rain', message: 'أمطار — لا تفتح الخلايا', severity: 'medium' });
+    if (humidity > 85) alerts.push({ type: 'humidity', message: 'رطوبة عالية — راقب الأمراض الفطرية', severity: 'medium' });
+    if (visibility < 1) alerts.push({ type: 'visibility', message: 'رؤية منخفضة جداً', severity: 'low' });
 
     return alerts;
   };
@@ -125,8 +120,17 @@ export default function WeatherPage() {
     return (
       <div className="flex flex-col min-h-screen pb-20">
         <Header title="حالة الطقس" subtitle="تنبؤات للمنحل" />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="animate-spin text-honey" size={32} />
+        <div className="flex-1 px-4 py-4 space-y-4">
+          <div className="animate-pulse space-y-4">
+            <div className="h-10 bg-bee-border/50 rounded-lg" />
+            <div className="h-40 bg-bee-border/50 rounded-xl" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="h-20 bg-bee-border/50 rounded-lg" />
+              <div className="h-20 bg-bee-border/50 rounded-lg" />
+              <div className="h-20 bg-bee-border/50 rounded-lg" />
+              <div className="h-20 bg-bee-border/50 rounded-lg" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -139,7 +143,16 @@ export default function WeatherPage() {
         <div className="flex-1 flex flex-col items-center justify-center px-4">
           <AlertTriangle size={48} className="text-yellow-500 mb-4" />
           <p className="text-lg font-medium text-bee-text mb-2">لا توجد بيانات طقس</p>
-          <p className="text-sm text-bee-muted text-center">تأكد من اختيار منحل للحصول على بيانات الطقس</p>
+          <p className="text-sm text-bee-muted text-center mb-4">تأكد من اختيار منحل للحصول على بيانات الطقس</p>
+          {selectedApiary && (
+            <button
+              onClick={() => fetchWeather(selectedApiary, true)}
+              className="flex items-center gap-2 px-4 py-2 bg-honey text-white rounded-lg text-sm font-medium"
+            >
+              <RefreshCw size={14} />
+              إعادة المحاولة
+            </button>
+          )}
         </div>
       </div>
     );
@@ -150,7 +163,6 @@ export default function WeatherPage() {
       <Header title="حالة الطقس" subtitle={weather?.city || ''} />
 
       <div className="flex-1 px-4 py-4 space-y-4">
-        {/* Apiary selector */}
         {apiaries.length > 1 && (
           <select
             value={selectedApiary}
@@ -163,7 +175,15 @@ export default function WeatherPage() {
           </select>
         )}
 
-        {/* Weather alerts */}
+        <button
+          onClick={() => fetchWeather(selectedApiary, true)}
+          disabled={refreshing}
+          className="flex items-center gap-2 text-xs text-bee-muted hover:text-honey transition-colors"
+        >
+          <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
+          {refreshing ? 'جاري التحديث...' : 'تحديث'}
+        </button>
+
         {alerts.length > 0 && (
           <div className="space-y-2">
             {alerts.map((alert, i) => (
@@ -187,7 +207,6 @@ export default function WeatherPage() {
           </div>
         )}
 
-        {/* Main weather card */}
         <Card className="bg-gradient-to-br from-honey/20 to-honey/5 border-honey/20">
           <div className="text-center py-4">
             <WeatherIcon size={48} className="mx-auto text-honey mb-2" />
@@ -197,7 +216,6 @@ export default function WeatherPage() {
           </div>
         </Card>
 
-        {/* Weather details */}
         <div className="grid grid-cols-2 gap-3">
           <Card>
             <div className="flex items-center gap-2 mb-1">
@@ -229,7 +247,6 @@ export default function WeatherPage() {
           </Card>
         </div>
 
-        {/* Forecast */}
         {weather.forecast && weather.forecast.length > 0 && (
           <>
             <h3 className="font-bold text-base">تنبؤ 5 أيام</h3>
@@ -253,7 +270,6 @@ export default function WeatherPage() {
           </>
         )}
 
-        {/* Dynamic tip */}
         <Card className="bg-green-50 border-green-200">
           <p className="text-sm text-green-700">
             <strong>نصيحة:</strong> {tip}

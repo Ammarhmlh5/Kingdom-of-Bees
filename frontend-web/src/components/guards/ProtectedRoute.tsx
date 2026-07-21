@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { RoleGuard } from './RoleGuard';
 
@@ -11,10 +11,11 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({
     children,
-    allowedRoles = ['OWNER', 'WORKER', 'ADMIN'],
+    allowedRoles = ['OWNER', 'WORKER', 'ADMIN', 'EXPLORER'],
     requireAuth = true
 }: ProtectedRouteProps) {
     const { user, isLoading } = useAuth();
+    const location = useLocation();
 
     // Show loading state
     if (isLoading) {
@@ -30,7 +31,7 @@ export function ProtectedRoute({
 
     // Check authentication
     if (requireAuth && !user) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
     // If no role restrictions, just render

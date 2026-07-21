@@ -7,7 +7,7 @@ import apiClient from '@/lib/apiClient';
 import { put, addToSyncQueue } from '@/lib/db';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { toast } from 'sonner';
-import { Plus, Trash2, GripVertical } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Loader2 } from 'lucide-react';
 
 const FRAME_TYPES: Record<string, string> = {
   brood: 'إطار تفريخ', honey: 'إطار عسل', foundation: 'إطار أساس',
@@ -30,43 +30,49 @@ export default function FramesPage() {
   const isOnline = useOnlineStatus();
   const [frames, setFrames] = useState<Frame[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => { loadHive(); }, [hiveId]);
 
   const loadHive = async () => {
+    try {
+    const { getById } = await import('@/lib/db');
+    const defaultFrames = (count: number) =>
+      Array.from({ length: count }, (_, i) => ({
+        position: i + 1, type: 'foundation', broodPercent: 0, honeyPercent: 0, pollenPercent: 0,
+      }));
+
     if (apiaryId) {
       try {
         const { data } = await apiClient.get(`/apiaries/${apiaryId}/hives/${hiveId}`);
-        const hive = data.data || data;
-        const count = hive.framesCount || 10;
-        setFrames(Array.from({ length: count }, (_, i) => ({
-          position: i + 1, type: 'foundation', broodPercent: 0, honeyPercent: 0, pollenPercent: 0,
-        })));
-      } catch {
-        const { getById } = await import('@/lib/db');
-        const h = await getById<any>('hives', hiveId!);
-        if (h) {
-          const count = h.framesCount || 10;
-          setFrames(Array.from({ length: count }, (_, i) => ({
-            position: i + 1, type: 'foundation', broodPercent: 0, honeyPercent: 0, pollenPercent: 0,
-          })));
+        const hive = data?.data !== undefined ? data.data : data;
+        if (hive.frames && Array.isArray(hive.frames) && hive.frames.length > 0) {
+          setFrames(hive.frames);
+        } else {
+          setFrames(defaultFrames(hive.framesCount || 10));
         }
+        return;
+      } catch { /* fall through */ }
+    }
+
+    const h = await getById<Record<string, unknown>>('hives', hiveId!);
+    if (h) {
+      if (h.frames && Array.isArray(h.frames) && (h.frames as unknown[]).length > 0) {
+        setFrames(h.frames as unknown as Frame[]);
+      } else {
+        setFrames(defaultFrames((h.framesCount as number) || 10));
       }
-    } else {
-      const { getById } = await import('@/lib/db');
-      const h = await getById<any>('hives', hiveId!);
-      if (h) {
-        const count = h.framesCount || 10;
-        setFrames(Array.from({ length: count }, (_, i) => ({
-          position: i + 1, type: 'foundation', broodPercent: 0, honeyPercent: 0, pollenPercent: 0,
-        })));
-      }
+    }
+    } catch {
+      // ignore
+    } finally {
+      setInitialLoading(false);
     }
   };
 
   const addFrame = () => setFrames([...frames, { position: frames.length + 1, type: 'foundation', broodPercent: 0, honeyPercent: 0, pollenPercent: 0 }]);
   const removeFrame = (index: number) => { if (frames.length <= 1) return; setFrames(frames.filter((_, i) => i !== index).map((f, i) => ({ ...f, position: i + 1 }))); };
-  const updateFrame = (index: number, field: keyof Frame, value: any) => { const u = [...frames]; u[index] = { ...u[index], [field]: value }; setFrames(u); };
+  const updateFrame = (index: number, field: keyof Frame, value: string | number) => { const u = [...frames]; u[index] = { ...u[index], [field]: value }; setFrames(u); };
 
   const handleSave = async () => {
     setLoading(true);
@@ -78,7 +84,7 @@ export default function FramesPage() {
         } catch { /* fall through */ }
       }
       const { getById } = await import('@/lib/db');
-      const h = await getById<any>('hives', hiveId!);
+      const h = await getById<Record<string, unknown>>('hives', hiveId!);
       if (h) await put('hives', { ...h, framesCount: frames.length });
       await addToSyncQueue('hives', 'update', { framesCount: frames.length, frames });
       toast.success('تم الحفظ محلياً'); navigate(-1);
@@ -89,6 +95,11 @@ export default function FramesPage() {
     <div className="flex flex-col min-h-screen">
       <Header title="إدارة الأطر" subtitle={`${frames.length} إطار`} />
       <div className="flex-1 px-4 py-4 space-y-4">
+        {initialLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="animate-spin text-honey" size={32} />
+          </div>
+        ) : <>
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-sm">أطر الخلية</h3>
           <Button variant="ghost" size="sm" onClick={addFrame}><Plus size={14} /> إطار</Button>
@@ -107,6 +118,13 @@ export default function FramesPage() {
                     className="w-full px-2 py-1.5 rounded border border-bee-border text-xs bg-white">
                     {Object.entries(FRAME_TYPES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                   </select>
+
+                  <div className="h-2 rounded-full overflow-hidden bg-gray-100 flex">
+                    {frame.broodPercent > 0 && <div className="bg-honey" style={{ width: `${frame.broodPercent}%` }} />}
+                    {frame.honeyPercent > 0 && <div className="bg-amber-400" style={{ width: `${frame.honeyPercent}%` }} />}
+                    {frame.pollenPercent > 0 && <div className="bg-green-400" style={{ width: `${frame.pollenPercent}%` }} />}
+                  </div>
+
                   <div className="grid grid-cols-3 gap-2 text-[10px]">
                     <div>
                       <label className="text-bee-muted">بيض {frame.broodPercent}%</label>
@@ -135,6 +153,7 @@ export default function FramesPage() {
           <Button variant="secondary" fullWidth onClick={() => navigate(-1)}>رجوع</Button>
           <Button fullWidth onClick={handleSave} disabled={loading}>{loading ? 'جاري الحفظ...' : 'حفظ التغييرات'}</Button>
         </div>
+        </>}
       </div>
     </div>
   );

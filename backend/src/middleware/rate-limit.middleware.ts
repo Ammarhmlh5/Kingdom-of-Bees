@@ -42,6 +42,9 @@ export function createRateLimit(options: RateLimitOptions) {
 
     if (entry.count > maxRequests) {
       logger.warn(`[RateLimit] Blocked request from ${req.ip} to ${req.baseUrl}`);
+      res.setHeader('Retry-After', Math.ceil((entry.resetTime - now) / 1000));
+      res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
       return res.status(429).json({
         success: false,
         error: message,
@@ -55,8 +58,8 @@ export function createRateLimit(options: RateLimitOptions) {
 
 // Pre-configured rate limits
 export const authRateLimit = createRateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 10,
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  maxRequests: 50,
   message: 'Too many authentication attempts',
 });
 

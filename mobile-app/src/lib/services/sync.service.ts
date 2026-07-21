@@ -1,5 +1,5 @@
 import apiClient from '../apiClient';
-import { getAll, getPendingSyncItems, markSynced, put } from '../db';
+import { getPendingSyncItems, markSynced, put } from '../db';
 
 const SYNC_TABLES = [
   'apiaries',

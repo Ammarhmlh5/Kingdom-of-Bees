@@ -12,7 +12,7 @@ export default function MergePage() {
   const { id: hiveId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const apiaryId = (location.state as any)?.apiaryId;
+  const [resolvedApiaryId, setResolvedApiaryId] = useState<string | null>((location.state as any)?.apiaryId || null);
   const [candidates, setCandidates] = useState<Hive[]>([]);
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,35 +26,37 @@ export default function MergePage() {
 
   const loadCandidates = async () => {
     setLoading(true);
+    let apiaryId = resolvedApiaryId;
+
+    if (!apiaryId) {
+      try {
+        const { getById } = await import('@/lib/db');
+        const hive = await getById<any>('hives', hiveId!);
+        if (hive?.apiaryId) {
+          apiaryId = String(hive.apiaryId);
+          setResolvedApiaryId(apiaryId);
+        }
+      } catch { /* ignore */ }
+    }
+
     if (apiaryId) {
       try {
         const { data } = await apiClient.get(`/apiaries/${apiaryId}/hives/merge-candidates`);
-        const list = data.data || data || [];
-        setCandidates(list.filter((h: any) => String(h.id) !== String(hiveId)));
-      } catch {
-        try {
-          const { getAll } = await import('@/lib/db');
-          const all = await getAll<Hive>('hives');
-          const source = all.find(h => String(h.id) === String(hiveId));
-          if (source) {
-            setCandidates(all.filter(h => String(h.apiaryId) === String(source.apiaryId) && String(h.id) !== String(hiveId)));
-          }
-        } catch {
-          // ignore
-        }
-      }
-    } else {
-      try {
-        const { getAll } = await import('@/lib/db');
-        const all = await getAll<Hive>('hives');
-        const source = all.find(h => String(h.id) === String(hiveId));
-        if (source) {
-          setCandidates(all.filter(h => String(h.apiaryId) === String(source.apiaryId) && String(h.id) !== String(hiveId)));
-        }
-      } catch {
-        // ignore
-      }
+        const list = data?.data !== undefined ? data.data : data;
+        setCandidates((Array.isArray(list) ? list : []).filter((h: any) => String(h.id) !== String(hiveId)));
+        setLoading(false);
+        return;
+      } catch { /* fall through */ }
     }
+
+    try {
+      const { getAll } = await import('@/lib/db');
+      const all = await getAll<Hive>('hives');
+      const source = all.find(h => String(h.id) === String(hiveId));
+      if (source) {
+        setCandidates(all.filter(h => String(h.apiaryId) === String(source.apiaryId) && String(h.id) !== String(hiveId)));
+      }
+    } catch { /* ignore */ }
     setLoading(false);
   };
 
@@ -74,8 +76,16 @@ export default function MergePage() {
     setShowConfirm(false);
     setMerging(true);
     try {
-      if (apiaryId) {
-        await apiClient.post(`/apiaries/${apiaryId}/hives/${hiveId}/merge`, { targetId: selectedTarget });
+      if (resolvedApiaryId) {
+        await apiClient.post(`/apiaries/${resolvedApiaryId}/hives/${hiveId}/merge`, { targetId: selectedTarget });
+      } else {
+        const { getById, remove, put } = await import('@/lib/db');
+        const source = await getById<any>('hives', hiveId!);
+        const target = await getById<any>('hives', selectedTarget!);
+        if (source && target) {
+          await put('hives', { ...target, framesCount: (target.framesCount || 10) + (source.framesCount || 10) });
+          await remove('hives', hiveId!);
+        }
       }
       toast.success('تم دمج الخلية بنجاح');
       navigate(-1);

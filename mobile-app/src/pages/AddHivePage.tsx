@@ -22,8 +22,19 @@ export default function AddHivePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) {
+    if (!name.trim()) {
       toast.error('يرجى إدخال اسم الخلية');
+      return;
+    }
+    const year = Number(queenYear);
+    const currentYear = new Date().getFullYear();
+    if (!queenYear || isNaN(year) || year < 2000 || year > currentYear) {
+      toast.error(`سنة الملكة يجب أن بين 2000 و ${currentYear}`);
+      return;
+    }
+    const frames = Number(framesCount);
+    if (isNaN(frames) || frames < 8 || frames > 40) {
+      toast.error('عدد الأطر يجب أن بين 8 و 40');
       return;
     }
 

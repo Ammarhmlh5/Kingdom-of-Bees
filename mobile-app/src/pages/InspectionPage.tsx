@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/Button';
@@ -9,7 +9,7 @@ import { add, addToSyncQueue } from '@/lib/db';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { AIService } from '@/lib/services/ai.service';
 import { toast } from 'sonner';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Plus, AlertTriangle } from 'lucide-react';
 
 interface FrameInput {
   position: number;
@@ -18,6 +18,22 @@ interface FrameInput {
   honeyPercent: number;
   pollenPercent: number;
 }
+
+const FRAME_TYPES: Record<string, string> = {
+  brood: 'تفريخ',
+  honey: 'عسل',
+  foundation: 'أساس',
+  empty: 'فارغ',
+  pollen: 'بولين',
+  drone: 'ذكور',
+};
+
+const TEMPERAMENT_OPTIONS = [
+  { value: 'calm', label: 'هادئ' },
+  { value: 'gentle', label: 'لطيف' },
+  { value: 'aggressive', label: 'عدواني' },
+  { value: 'nervous', label: 'عصبي' },
+];
 
 export default function InspectionPage() {
   const { id: hiveId } = useParams();
@@ -31,15 +47,32 @@ export default function InspectionPage() {
   const [temperament, setTemperament] = useState('calm');
   const [queenSeen, setQueenSeen] = useState(false);
   const [eggsSeen, setEggsSeen] = useState(false);
+  const [storesAdequate, setStoresAdequate] = useState(true);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [hiveName, setHiveName] = useState('');
+
+  useEffect(() => {
+    if (hiveId && apiaryId) {
+      apiClient.get(`/apiaries/${apiaryId}/hives/${hiveId}`)
+        .then(({ data }) => {
+          const h = data?.data !== undefined ? data.data : data;
+          setHiveName(h.name || '');
+          const count = h.framesCount || 10;
+          setFrames(Array.from({ length: count }, (_, i) => ({
+            position: i + 1, type: 'foundation', broodPercent: 0, honeyPercent: 0, pollenPercent: 0,
+          })));
+        })
+        .catch(() => {});
+    }
+  }, [hiveId, apiaryId]);
 
   const addFrame = () => {
     setFrames([...frames, {
       position: frames.length + 1,
-      type: 'brood',
+      type: 'foundation',
       broodPercent: 0,
       honeyPercent: 0,
       pollenPercent: 0,
@@ -57,15 +90,41 @@ export default function InspectionPage() {
     setFrames(updated);
   };
 
+  const calculateStrength = (): number => {
+    if (frames.length === 0) return 0;
+    const broodFrames = frames.filter(f => f.type === 'brood' || f.broodPercent > 0);
+    const totalBrood = frames.reduce((sum, f) => sum + f.broodPercent, 0);
+    const avgBrood = totalBrood / frames.length;
+    const strength = Math.min(100, Math.round(
+      (broodFrames.length / frames.length) * 40 +
+      avgBrood * 0.3 +
+      (queenSeen ? 15 : 0) +
+      (eggsSeen ? 15 : 0)
+    ));
+    return strength;
+  };
+
+  const getStrengthLabel = (s: number) => {
+    if (s >= 80) return { label: 'ممتازة', color: 'text-green-700 bg-green-100' };
+    if (s >= 60) return { label: 'جيدة', color: 'text-blue-700 bg-blue-100' };
+    if (s >= 40) return { label: 'متوسطة', color: 'text-yellow-700 bg-yellow-100' };
+    if (s >= 20) return { label: 'ضعيفة', color: 'text-orange-700 bg-orange-100' };
+    return { label: 'حرجة', color: 'text-red-700 bg-red-100' };
+  };
+
+  const strength = calculateStrength();
+  const strengthInfo = getStrengthLabel(strength);
+
   const handleSubmit = async () => {
     setLoading(true);
     try {
       const inspectionData = {
-        hiveId,
-        date: new Date().toISOString(),
+        inspectionDate: new Date().toISOString(),
+        hiveStrength: String(strength),
         temperament,
         queenSeen,
         eggsSeen,
+        honeyStores: storesAdequate ? 'adequate' : 'low',
         notes,
         frames,
       };
@@ -103,10 +162,6 @@ export default function InspectionPage() {
     }
   };
 
-  const temperamentLabel: Record<string, string> = {
-    calm: 'هادئ', gentle: 'لطيف', aggressive: 'عدواني', nervous: 'عصبي',
-  };
-
   if (saved) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -119,9 +174,18 @@ export default function InspectionPage() {
             </div>
           </Card>
 
+          <Card>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">قوة الخلية</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${strengthInfo.color}`}>
+                {strength}% — {strengthInfo.label}
+              </span>
+            </div>
+          </Card>
+
           {aiAnalysis !== null && (
             <Card className="bg-blue-50 border-blue-200">
-              <h4 className="font-bold text-sm text-blue-800 mb-2">🤖 تحليل الذكاء الاصطناعي</h4>
+              <h4 className="font-bold text-sm text-blue-800 mb-2">تحليل الذكاء الاصطناعي</h4>
               <p className="text-sm text-blue-700 whitespace-pre-line">{aiAnalysis}</p>
             </Card>
           )}
@@ -145,7 +209,7 @@ export default function InspectionPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header title="فحص الخلية" />
+      <Header title={`فحص: ${hiveName || 'الخلية'}`} subtitle={`${frames.length} إطار`} />
 
       <div className="flex-1 px-4 py-4 space-y-4">
         <div className="flex gap-3">
@@ -156,7 +220,7 @@ export default function InspectionPage() {
               onChange={(e) => setTemperament(e.target.value)}
               className="w-full px-3 py-2.5 rounded-lg border border-bee-border bg-white text-sm"
             >
-              {Object.entries(temperamentLabel).map(([value, label]) => (
+              {TEMPERAMENT_OPTIONS.map(({ value, label }) => (
                 <option key={value} value={value}>{label}</option>
               ))}
             </select>
@@ -181,9 +245,27 @@ export default function InspectionPage() {
           </div>
         </div>
 
+        <button
+          onClick={() => setStoresAdequate(!storesAdequate)}
+          className={`w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors text-right ${
+            storesAdequate ? 'bg-green-50 border-green-300 text-green-700' : 'bg-white border-bee-border text-bee-muted'
+          }`}
+        >
+          {storesAdequate ? '✓ التخزين كافٍ' : 'التخزين غير كافٍ'}
+        </button>
+
+        <Card className="bg-honey/5 border-honey/20">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">قوة الخلية التقديرية</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${strengthInfo.color}`}>
+              {strength}% — {strengthInfo.label}
+            </span>
+          </div>
+        </Card>
+
         <div className="flex items-center justify-between">
           <h3 className="font-bold">الأطر ({frames.length})</h3>
-          <Button variant="ghost" size="sm" onClick={addFrame}>+ إطار</Button>
+          <Button variant="ghost" size="sm" onClick={addFrame}><Plus size={14} /> إطار</Button>
         </div>
 
         {frames.map((frame, index) => (
@@ -196,7 +278,16 @@ export default function InspectionPage() {
                 <Trash2 size={14} />
               </button>
             )}
-            <div className="text-sm font-medium text-bee-muted mb-2">الإطار {frame.position}</div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-bold text-bee-muted w-6 text-center">{frame.position}</span>
+              <select
+                value={frame.type}
+                onChange={(e) => updateFrame(index, 'type', e.target.value)}
+                className="flex-1 px-2 py-1.5 rounded border border-bee-border text-xs bg-white"
+              >
+                {Object.entries(FRAME_TYPES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </div>
             <div className="space-y-2">
               <div>
                 <label className="text-xs text-bee-muted">البيض: {frame.broodPercent}%</label>

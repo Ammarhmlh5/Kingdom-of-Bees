@@ -4,8 +4,9 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { beeCounter } from '@/lib/services/bee-counter.service';
 import { add, addToSyncQueue, getAll } from '@/lib/db';
+import apiClient from '@/lib/apiClient';
 import { toast } from 'sonner';
-import { Camera, Upload, Loader2, RotateCcw, History, Trash2 } from 'lucide-react';
+import { Camera, Upload, Loader2, RotateCcw, History, ChevronUp, ChevronDown } from 'lucide-react';
 import type { BeeCountResult } from '@/lib/services/bee-counter.service';
 import type { BeeCount } from '@/types';
 
@@ -16,10 +17,13 @@ export default function BeeCounterPage() {
   const [apiKeyMissing, setApiKeyMissing] = useState(false);
   const [history, setHistory] = useState<BeeCount[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [selectedHiveId, setSelectedHiveId] = useState<string>('');
+  const [hives, setHives] = useState<{ id: string; name: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadHistory();
+    loadHives();
     const apiKey = import.meta.env.VITE_ROBOFLOW_API_KEY;
     if (!apiKey) setApiKeyMissing(true);
   }, []);
@@ -30,6 +34,25 @@ export default function BeeCounterPage() {
       setHistory(records.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 20));
     } catch {
       // ignore
+    }
+  };
+
+  const loadHives = async () => {
+    try {
+      const { data } = await apiClient.get('/apiaries');
+      const apiaries = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+      if (apiaries.length > 0) {
+        const { data: hivesData } = await apiClient.get(`/apiaries/${apiaries[0].id}/hives`);
+        const list = hivesData?.data !== undefined ? hivesData.data : hivesData;
+        setHives((Array.isArray(list) ? list : []).map((h: { id: string | number; name: string }) => ({ id: String(h.id), name: h.name })));
+      }
+    } catch {
+      try {
+        const all = await getAll<{ id: string | number; name: string }>('hives');
+        setHives(all.map((h) => ({ id: String(h.id), name: h.name })));
+      } catch {
+        // ignore
+      }
     }
   };
 
@@ -47,8 +70,8 @@ export default function BeeCounterPage() {
       const countResult = await beeCounter.countBeesFromImage(base64);
       setResult(countResult);
       toast.success(`تم اكتشاف ${countResult.count} نحلة`);
-    } catch (err: any) {
-      toast.error(err.message || 'خطأ في العد');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'خطأ في العد');
     } finally {
       setLoading(false);
     }
@@ -57,13 +80,17 @@ export default function BeeCounterPage() {
   const saveResult = async () => {
     if (!result) return;
     try {
-      const record: BeeCount = {
+      const record: { count: number; confidence: number; timestamp: string; hiveId?: string } = {
         count: result.count,
         confidence: result.confidence,
         timestamp: result.timestamp,
+        hiveId: selectedHiveId || undefined,
       };
       await add('bee_counts', record);
       await addToSyncQueue('bee_counts', 'create', record);
+      if (selectedHiveId && navigator.onLine) {
+        try { await apiClient.post('/bee-counts', record); } catch { /* sync later */ }
+      }
       toast.success('تم حفظ النتائج');
       loadHistory();
     } catch {
@@ -93,6 +120,17 @@ export default function BeeCounterPage() {
           </Card>
         )}
 
+        {hives.length > 0 && (
+          <div>
+            <label className="text-xs font-medium text-bee-muted block mb-1">الخلية (اختياري)</label>
+            <select value={selectedHiveId} onChange={(e) => setSelectedHiveId(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl border border-bee-border text-sm bg-white">
+              <option value="">بدون تحديد خلية</option>
+              {hives.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
+            </select>
+          </div>
+        )}
+
         {!imagePreview ? (
           <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-bee-border rounded-2xl">
             <Camera size={48} className="text-honey mb-4" />
@@ -106,7 +144,7 @@ export default function BeeCounterPage() {
         ) : (
           <>
             <Card className="overflow-hidden p-0">
-              <img src={imagePreview} alt="bee" className="w-full h-48 object-cover" />
+              <img src={imagePreview} alt="صورة للنحل" className="w-full h-48 object-cover" />
             </Card>
 
             {loading ? (
@@ -198,21 +236,5 @@ export default function BeeCounterPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-function ChevronUp({ size, className }: { size: number; className?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="m18 15-6-6-6 6"/>
-    </svg>
-  );
-}
-
-function ChevronDown({ size, className }: { size: number; className?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="m6 9 6 6 6-6"/>
-    </svg>
   );
 }

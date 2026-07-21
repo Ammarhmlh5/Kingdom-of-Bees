@@ -1,6 +1,4 @@
-﻿import { apiClient } from './apiClient';
-
-export interface BeeDetection {
+﻿export interface BeeDetection {
   x: number;
   y: number;
   width: number;
@@ -16,22 +14,16 @@ export interface BeeCountResult {
   timestamp: string;
 }
 
-export interface RoboflowConfig {
-  apiKey: string;
-  modelId: string;
-  apiUrl?: string;
-}
-
-const DEFAULT_CONFIG: RoboflowConfig = {
+const DEFAULT_CONFIG = {
   apiKey: import.meta.env.VITE_ROBOFLOW_API_KEY || '',
   modelId: 'bees-tbdsg/bee-counting',
   apiUrl: 'https://serverless.roboflow.com',
 };
 
 export class BeeCounterService {
-  private config: RoboflowConfig;
+  private config: { apiKey: string; modelId: string; apiUrl: string };
 
-  constructor(config: Partial<RoboflowConfig> = {}) {
+  constructor(config: { apiKey?: string; modelId?: string; apiUrl?: string } = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
@@ -40,83 +32,34 @@ export class BeeCounterService {
       throw new Error('يجب إعداد مفتاح Roboflow API. أضف VITE_ROBOFLOW_API_KEY في ملف .env');
     }
 
-    try {
-      const response = await fetch(
-        `${this.config.apiUrl}/${this.config.modelId}?api_key=${this.config.apiKey}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            image: imageBase64,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+    const response = await fetch(
+      `${this.config.apiUrl}/${this.config.modelId}?api_key=${this.config.apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageBase64 }),
       }
+    );
 
-      const data = await response.json();
-      const detections: BeeDetection[] = data.predictions || [];
-
-      return {
-        count: detections.length,
-        detections,
-        confidence: this.calculateAverageConfidence(detections),
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async countBeesFromUrl(imageUrl: string): Promise<BeeCountResult> {
-    if (!this.config.apiKey) {
-      throw new Error('يجب إعداد مفتاح Roboflow API. أضف VITE_ROBOFLOW_API_KEY في ملف .env');
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
     }
 
-    try {
-      const response = await fetch(
-        `${this.config.apiUrl}/${this.config.modelId}?api_key=${this.config.apiKey}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            image: imageUrl,
-          }),
-        }
-      );
+    const data = await response.json();
+    const detections: BeeDetection[] = data.predictions || [];
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const detections: BeeDetection[] = data.predictions || [];
-
-      return {
-        count: detections.length,
-        detections,
-        confidence: this.calculateAverageConfidence(detections),
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      throw error;
-    }
+    return {
+      count: detections.length,
+      detections,
+      confidence: this.calculateAverageConfidence(detections),
+      timestamp: new Date().toISOString(),
+    };
   }
 
   private calculateAverageConfidence(detections: BeeDetection[]): number {
     if (detections.length === 0) return 0;
     const total = detections.reduce((sum, d) => sum + d.confidence, 0);
     return total / detections.length;
-  }
-
-  static create(config: Partial<RoboflowConfig>): BeeCounterService {
-    return new BeeCounterService(config);
   }
 }
 

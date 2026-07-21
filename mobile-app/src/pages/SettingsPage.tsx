@@ -20,16 +20,53 @@ import {
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+  const [notifications, setNotifications] = useState(() => {
+    return localStorage.getItem('ko_notifications') !== 'off';
+  });
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('ko_darkMode') === 'on';
+  });
+
+  const toggleNotifications = async () => {
+    const next = !notifications;
+    setNotifications(next);
+    localStorage.setItem('ko_notifications', next ? 'on' : 'off');
+    if (next && 'Notification' in window) {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') {
+        setNotifications(false);
+        localStorage.setItem('ko_notifications', 'off');
+        toast.error('تم رفض إذن الإشعارات');
+      }
+    }
+  };
+
+  const toggleDarkMode = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    localStorage.setItem('ko_darkMode', next ? 'on' : 'off');
+    document.documentElement.classList.toggle('dark', next);
+  };
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
 
-  const handleClearCache = () => {
-    toast.success('تم مسح الكاش');
+  const handleClearCache = async () => {
+    try {
+      const { getDB } = await import('@/lib/db');
+      const db = await getDB();
+      for (const storeName of db.objectStoreNames) {
+        const tx = db.transaction(storeName, 'readwrite');
+        await tx.objectStore(storeName).clear();
+        await tx.done;
+      }
+      toast.success('تم مسح الكاش بنجاح');
+    } catch {
+      localStorage.clear();
+      toast.success('تم مسح الكاش');
+    }
   };
 
   return (
@@ -71,7 +108,7 @@ export default function SettingsPage() {
               <span className="text-sm font-medium">الإشعارات</span>
             </div>
             <button
-              onClick={() => setNotifications(!notifications)}
+              onClick={toggleNotifications}
               className={`w-12 h-6 rounded-full transition-colors relative ${
                 notifications ? 'bg-honey' : 'bg-gray-300'
               }`}
@@ -92,7 +129,7 @@ export default function SettingsPage() {
               <span className="text-sm font-medium">الوضع الليلي</span>
             </div>
             <button
-              onClick={() => setDarkMode(!darkMode)}
+              onClick={toggleDarkMode}
               className={`w-12 h-6 rounded-full transition-colors relative ${
                 darkMode ? 'bg-honey' : 'bg-gray-300'
               }`}
@@ -119,7 +156,7 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        <Card onClick={() => {}}>
+        <Card onClick={() => toast.info('قريباً')}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Shield size={20} className="text-honey" />
@@ -129,7 +166,7 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        <Card onClick={() => {}}>
+        <Card onClick={() => toast.info('قريباً')}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <HelpCircle size={20} className="text-honey" />
@@ -139,7 +176,7 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        <Card onClick={() => {}}>
+        <Card onClick={() => toast.info('مملكة النحل v2.0.0')}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Info size={20} className="text-honey" />
